@@ -1,0 +1,38 @@
+title = "omnium gitleaks config"
+
+# Mantiene las ~180 reglas predefinidas de gitleaks (AWS, GitHub,
+# Stripe...) y les suma las reglas propias de abajo.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "postgres-connection-string"
+description = "Connection string de Postgres con usuario y contraseña embebidos"
+regex = '''postgres(?:ql)?:\/\/[^:\/\s'"]+:[^@\/\s'"]+@[^\/\s'"]+'''
+tags = ["postgres", "connection-string"]
+
+[[rules]]
+id = "supabase-publishable-key"
+description = "Supabase publishable/anon key (formato nuevo)"
+regex = '''sb_publishable_[A-Za-z0-9_-]{20,}'''
+tags = ["supabase", "key"]
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase secret/service_role key (formato nuevo)"
+regex = '''sb_secret_[A-Za-z0-9_-]{20,}'''
+tags = ["supabase", "key"]
+
+[[rules]]
+id = "supabase-jwt-key"
+description = "Supabase key en formato JWT (anon/service_role legacy)"
+regex = '''eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'''
+tags = ["supabase", "jwt"]
+
+[[rules]]
+id = "dotenv-file-committed"
+description = "Archivo .env real (con valores) commiteado. Solo .env.example deberia versionarse."
+path = '''(^|/)\.env(\.[^.]+)?$'''
+
+  [rules.allowlist]
+  paths = ['''(^|/)\.env\.example$''']

@@ -1,0 +1,26 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      # gitleaks-system (no gitleaks): usa el binario ya instalado
+      # (brew install gitleaks) en vez de que pre-commit compile uno
+      # propio desde Go fuente, que es lento y necesita el toolchain
+      # de Go instalado.
+      - id: gitleaks-system
+        args: ["--config", ".gitleaks.toml"]
+        # pass_filenames explicito: al sobreescribir `args` se perdia
+        # la herencia de pass_filenames:false del hook remoto, y
+        # pre-commit pasaba el nombre de archivo como argumento
+        # posicional extra -- gitleaks lo interpretaba como una ruta
+        # de repo git invalida y fallaba en silencio (sin encontrar
+        # nada, en vez de dar error visible). Verificado con un
+        # commit de prueba que dejaba pasar secretos reales.
+        pass_filenames: false
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace

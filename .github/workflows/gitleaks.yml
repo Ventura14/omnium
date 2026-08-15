@@ -1,0 +1,29 @@
+name: gitleaks
+
+# No depende de la accion oficial gitleaks/gitleaks-action (requiere
+# licencia de pago en repos privados de organizacion). Se descarga el
+# binario directo de la release, que es MIT y gratis siempre.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Instalar gitleaks
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar xz gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
+
+      - name: Escanear historial completo
+        run: gitleaks git --redact --config .gitleaks.toml --verbose .

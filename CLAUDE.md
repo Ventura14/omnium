@@ -103,3 +103,5 @@ Fase 0-1: núcleo de nutrición. Precios introducidos a mano. **Sin scrapers tod
 - No implementes autenticación social, recuperación de contraseña ni onboarding. Un usuario.
 - No generes datos nutricionales inventados. Si falta un alimento, se importa de BEDCA u Open Food Facts o lo mete el usuario a mano.
 - No conectes con la API de Strava para nada que alimente un LLM: sus términos lo prohíben. Datos para IA solo desde export manual GPX/FIT.
+- Nunca imprimas el contenido de archivos `.env` por stdout, ni siquiera parcialmente ni "solo para verificar el formato". Un incidente real: verificar un `.env` con `awk` expuso una contraseña de base de datos completa en el chat.
+- Para comprobar que una variable de entorno está definida, usa `[ -n "$VAR" ] && echo "OK"`. Nunca `cat`, `awk`, `head` ni `grep` sobre el archivo `.env`.
