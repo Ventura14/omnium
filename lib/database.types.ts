@@ -173,6 +173,7 @@ export type Database = {
           protein_100g: number
           search_name: string
           source: Database["public"]["Enums"]["food_source"]
+          source_detail: string | null
           source_ref: string | null
           user_id: string | null
         }
@@ -189,6 +190,7 @@ export type Database = {
           protein_100g: number
           search_name: string
           source?: Database["public"]["Enums"]["food_source"]
+          source_detail?: string | null
           source_ref?: string | null
           user_id?: string | null
         }
@@ -205,6 +207,7 @@ export type Database = {
           protein_100g?: number
           search_name?: string
           source?: Database["public"]["Enums"]["food_source"]
+          source_detail?: string | null
           source_ref?: string | null
           user_id?: string | null
         }

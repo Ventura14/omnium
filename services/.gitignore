@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Cache intermedio de la descarga de BEDCA (resumible). El dato que
+# importa es data/bedca_raw.xml, que si se commitea.
+nutrition/data/.bedca_cache/

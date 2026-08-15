@@ -40,6 +40,7 @@ Confundir estos términos es el error más frecuente. Son cosas distintas:
 | **serving / ración** | Una porción de una recipe. Coloquialmente, un tupper. |
 | **cook_session** | Sesión de cocina (típicamente domingo) que **produce** raciones. |
 | **meal_plan_slot** | Hueco del calendario que **consume** una ración. |
+| **carbs_100g** | Carbohidratos TOTALES, fibra INCLUIDA (convención BEDCA, verificada por Atwater). Al importar de otras fuentes hay que comprobar su convención y normalizar a esta. USDA y Open Food Facts suelen reportar carbohidratos netos: en ese caso, sumar la fibra antes de insertar. |
 
 **Clave:** producción y consumo están desacoplados. Se cocina el domingo y se come de lunes a viernes. No asumas nunca que cocinar y comer ocurren el mismo día.
 
