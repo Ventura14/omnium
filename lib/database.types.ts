@@ -164,6 +164,7 @@ export type Database = {
           carbs_100g: number
           cooked_yield: number | null
           created_at: string
+          embedding: string | null
           fat_100g: number
           fiber_100g: number | null
           id: string
@@ -181,6 +182,7 @@ export type Database = {
           carbs_100g: number
           cooked_yield?: number | null
           created_at?: string
+          embedding?: string | null
           fat_100g: number
           fiber_100g?: number | null
           id?: string
@@ -198,6 +200,7 @@ export type Database = {
           carbs_100g?: number
           cooked_yield?: number | null
           created_at?: string
+          embedding?: string | null
           fat_100g?: number
           fiber_100g?: number | null
           id?: string

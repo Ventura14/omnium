@@ -26,6 +26,8 @@ Estas no se negocian. Si una tarea parece requerir romperlas, para y pregunta.
 5. **Toda la nutrición en gramos.** Sin tazas, cucharadas ni unidades. La conversión, si algún día llega, se hace en capa de presentación.
 6. **No optimices rendimiento.** Un usuario, ejecución semanal. Un script que tarda 40 segundos está bien. Optimiza legibilidad.
 7. **Migraciones, nunca cambios manuales en el panel de Supabase.** Si el esquema cambia, hay un archivo en `supabase/migrations/`.
+8. **Las conservas requieren confirmación manual del peso escurrido.** El peso del nombre del producto y el "contenido neto" del envase no son lo mismo, y no hay señal estructural que los distinga (ver `services/scrapers/VIABILIDAD_matching_dia_bedca.md`). Nunca infieras el peso escurrido del nombre.
+9. **Akamai Bot Manager activo en Dia.** Los scrapers van a 1 req/seg como máximo, sin paralelizar, y con backoff exponencial ante 403 o 429. Nunca reintentar en bucle.
 
 ## Vocabulario del dominio
 
