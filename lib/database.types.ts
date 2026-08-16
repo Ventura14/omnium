@@ -301,6 +301,42 @@ export type Database = {
         }
         Relationships: []
       }
+      nutrition_targets: {
+        Row: {
+          carbs_g: number
+          created_at: string
+          effective_from: string
+          fat_g: number
+          id: string
+          kcal: number
+          notes: string | null
+          protein_g: number
+          user_id: string
+        }
+        Insert: {
+          carbs_g: number
+          created_at?: string
+          effective_from: string
+          fat_g: number
+          id?: string
+          kcal: number
+          notes?: string | null
+          protein_g: number
+          user_id: string
+        }
+        Update: {
+          carbs_g?: number
+          created_at?: string
+          effective_from?: string
+          fat_g?: number
+          id?: string
+          kcal?: number
+          notes?: string | null
+          protein_g?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       recipe_ingredients: {
         Row: {
           food_id: string
@@ -487,7 +523,29 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      compute_recipe_macros: {
+        Args: { p_food_ids: string[]; p_grams: number[]; p_servings: number }
+        Returns: {
+          carbs_per_serving: number
+          fat_per_serving: number
+          kcal_per_serving: number
+          protein_per_serving: number
+        }[]
+      }
+      normalize_search_name: { Args: { input: string }; Returns: string }
+      search_foods: {
+        Args: { query: string }
+        Returns: {
+          carbs_100g: number
+          fat_100g: number
+          id: string
+          kcal_100g: number
+          name: string
+          protein_100g: number
+          source_detail: string
+        }[]
+      }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       food_source: "bedca" | "openfoodfacts" | "manual"
