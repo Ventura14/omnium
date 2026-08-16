@@ -8,7 +8,6 @@ reales). Ejecutar: uv run services/nutrition/import_bedca.py
 
 import csv
 import sys
-import unicodedata
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -40,21 +39,6 @@ class SkippedFood:
     f_id: str
     name: str
     missing: str
-
-
-def to_search_name(name: str) -> str:
-    """minusculas, sin acentos, sin puntuacion."""
-    decomposed = unicodedata.normalize("NFD", name.strip().lower())
-    kept_chars = []
-    for char in decomposed:
-        category = unicodedata.category(char)
-        if category.startswith("M"):  # marca diacritica combinante (acentos)
-            continue
-        if category.startswith("P"):  # puntuacion (- , . / % ' " ( ) ...)
-            continue
-        kept_chars.append(char)
-    # Colapsar espacios que puedan quedar duplicados tras quitar puntuacion.
-    return " ".join("".join(kept_chars).split())
 
 
 def _resolve_value(text: str | None) -> float:
@@ -125,10 +109,12 @@ def parse_food(food_elem: ET.Element) -> tuple[dict | None, SkippedFood | None, 
 
     kcal_100g, energy_branch = extract_energy_kcal(food_elem)
 
+    # search_name no se calcula aqui: lo rellena siempre un trigger en
+    # Postgres (normalize_search_name), que ignora lo que mande el
+    # cliente. Mandarlo desde Python solo duplicaria la logica.
     row = {
         "user_id": None,
         "name": name,
-        "search_name": to_search_name(name) if name else "",
         "source": BEDCA_SOURCE,
         "source_ref": f_id,
         "kcal_100g": kcal_100g,
