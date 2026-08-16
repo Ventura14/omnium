@@ -21,6 +21,13 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
+        # 500KB por defecto es demasiado bajo para este repo: guarda
+        # volcados de datos de sondas exploratorias como texto plano
+        # a proposito (bedca_raw.xml, ~8.5MB, ya vive aqui -- se
+        # commiteo antes de que existiera este hook). 2MB da margen
+        # para ese patron sin dejar de avisar de archivos realmente
+        # descontrolados.
+        args: ["--maxkb=2000"]
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: trailing-whitespace
