@@ -28,6 +28,8 @@ Estas no se negocian. Si una tarea parece requerir romperlas, para y pregunta.
 7. **Migraciones, nunca cambios manuales en el panel de Supabase.** Si el esquema cambia, hay un archivo en `supabase/migrations/`.
 8. **Las conservas requieren confirmación manual del peso escurrido.** El peso del nombre del producto y el "contenido neto" del envase no son lo mismo, y no hay señal estructural que los distinga (ver `services/scrapers/VIABILIDAD_matching_dia_bedca.md`). Nunca infieras el peso escurrido del nombre.
 9. **Akamai Bot Manager activo en Dia.** Los scrapers van a 1 req/seg como máximo, sin paralelizar, y con backoff exponencial ante 403 o 429. Nunca reintentar en bucle.
+10. **Desarrollo contra Supabase cloud.** NUNCA `supabase start` ni `supabase db reset`: la máquina no da para los contenedores (decisión ya tomada, no reabrir), y `db reset` contra el proyecto enlazado borraría el catálogo completo. Las migraciones se aplican al proyecto enlazado con `supabase db push`, nunca en local. El agente no ejecuta `supabase db push` por iniciativa propia: prepara la migración y para. La aplica solo cuando el usuario lo pide explícitamente, después de revisarla. Solo lectura (`supabase migration list`) sí puede ejecutarse sin pedir permiso.
+11. **`search_name` lo rellena siempre un trigger de Postgres** (`normalize_search_name`), tanto en INSERT como en UPDATE. Ningún cliente — ni Python, ni TypeScript — lo calcula ni lo envía.
 
 ## Vocabulario del dominio
 
@@ -42,7 +44,9 @@ Confundir estos términos es el error más frecuente. Son cosas distintas:
 | **serving / ración** | Una porción de una recipe. Coloquialmente, un tupper. |
 | **cook_session** | Sesión de cocina (típicamente domingo) que **produce** raciones. |
 | **meal_plan_slot** | Hueco del calendario que **consume** una ración. |
-| **carbs_100g** | Carbohidratos TOTALES, fibra INCLUIDA (convención BEDCA, verificada por Atwater). Al importar de otras fuentes hay que comprobar su convención y normalizar a esta. USDA y Open Food Facts suelen reportar carbohidratos netos: en ese caso, sumar la fibra antes de insertar. |
+| **carbs_100g** | Columna cruda tal como llega de la fuente. **Mezcla dos convenciones** (fibra incluida y fibra excluida) dentro de la misma columna — no asumir ninguna. Prueba: 54 filas tienen `fiber_100g > carbs_100g`, matemáticamente imposible si `carbs_100g` incluyera siempre la fibra. La convención de cada fila se marca en `carbs_convention` (`'net'`, `'total'` o `'unknown'`), asignada solo por regla aritmética demostrable, nunca por Atwater (Atwater es una estimación, no una prueba — no sirve para clasificar un dato como si fuera un hecho). |
+| **carbs_convention** | `'net'` si `fiber_100g > carbs_100g` (prueba aritmética de que la fibra está excluida); `'total'` si `fiber_100g` es nulo o <0.5 (la diferencia con incluirla es irrelevante); `'unknown'` en cualquier otro caso — no se inventa. |
+| **carbs_total_100g** | Columna generada: `carbs_100g + fiber_100g` cuando `carbs_convention='net'`, si no `carbs_100g` tal cual. **Todo consumo de carbohidratos usa esta columna, nunca `carbs_100g` directamente** (`recipe_macros`, `compute_recipe_macros`). Al importar de USDA/OFF, marcar `carbs_convention` explícitamente según lo que documente la fuente — no sumar fibra a ciegas asumiendo que siempre viene neta. |
 
 **Clave:** producción y consumo están desacoplados. Se cocina el domingo y se come de lunes a viernes. No asumas nunca que cocinar y comer ocurren el mismo día.
 
@@ -78,12 +82,14 @@ Son restricciones duras del sistema, no preferencias sugeridas, pero **son datos
 ## Comandos
 
 ```bash
-pnpm dev                          # frontend local
-pnpm typecheck                    # antes de cada commit
-supabase db reset                 # recrear BBDD local desde migraciones
-supabase gen types typescript --local > lib/database.types.ts
-cd services && uv run pytest      # tests de Python
+pnpm dev                            # frontend local
+pnpm typecheck                      # antes de cada commit
+supabase db push                    # aplica migraciones pendientes al proyecto enlazado (cloud)
+supabase gen types typescript --linked > lib/database.types.ts
+cd services && uv run pytest        # tests de Python
 ```
+
+Nunca `supabase start` ni `supabase db reset` — ver regla dura 10.
 
 ## Convenciones
 
