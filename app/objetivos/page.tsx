@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { todayInMadrid } from "@/lib/dates";
 import { setTarget } from "./actions";
 
 export default async function ObjetivosPage({
@@ -15,7 +16,7 @@ export default async function ObjetivosPage({
     .order("effective_from", { ascending: false });
 
   const current = targets?.[0];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInMadrid();
 
   return (
     <main className="mx-auto max-w-2xl space-y-10 p-6">
