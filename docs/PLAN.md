@@ -30,17 +30,19 @@ Contraste: la pasta con albondigas da 1.019 kcal pero 49,2 g de grasa, el 62 % d
 
 ## Fases
 
-### Fase 1 - Catalogo de trabajo  [CERRADA cuando se confirme el push — ver detalle abajo]
+### Fase 1 - Catalogo de trabajo  [CERRADA — 17/08/2026]
 
 Aislar los alimentos que se comen de verdad y verificarlos a mano contra fuente externa, en vez de arreglar 953. Resultado: 34 alimentos de trabajo, 0 en zona ciega de convencion de carbohidratos, 0 energeticamente imposibles. Criterio de salida cambiado a mitad de fase (detalle completo debajo).
 
 Pendientes que NO bloquean: whey, pasta sin gluten, maiz dulce en conserva y queso fresco batido no existen en BEDCA — son productos comerciales y entran a mano desde etiqueta.
 
-**Estado real (2026-08-18): preparado, pendiente de aplicar.** Lo de
-arriba describe el estado que tendrá cloud tras el `supabase db push`
-de las migraciones `20260817000000` a `20260817060000` (y el commit
-correspondiente) — no lo ejecuta este documento. Hasta que se
-confirme el push, esto describe un objetivo, no un hecho.
+**Estado real (2026-08-18): aplicado y verificado contra cloud.** Las
+migraciones `20260817000000` a `20260817060000` están en producción
+(commits `e70d3c4`, `af0c668`, `187ff12`) y las cuatro verificaciones
+de cierre pasaron: `is_staple=true` da 34, cero en zona ciega de
+convención, cero `energy_impossible`, y la Ensalada de atún refleja el
+cambio de nuez (31.9 → 30.6 g de grasa por ración; kcal/proteína/carbs
+sin mover).
 
 #### El criterio de salida cambió a mitad de fase — por qué
 
@@ -88,11 +90,33 @@ porqué: "Pollo, pechuga, con piel, crudo" se usó una vez sin verificar
 y resultó tener los macros de la pechuga CON piel, no sin ella, cuando
 la receta asumía sin piel.
 
-### Fase 2 - Validador de arquetipo
+### Fase 2 - Validador de arquetipo  [CERRADA — 18/08/2026]
 
 Vista recipe_fit en Postgres: por racion, si cumple >= 35 g proteina, <= 22 g grasa y la banda de kcal de su ingesta. Devuelve el DESVIO, no un booleano.
 
 SALIDA: las 4 recetas actuales puntuadas. Prediccion: sobreviven el curry y la pasta con lomo en lugar de picada; la ensalada de atun y la merluza tal como estan, no.
+
+**Resultado.** `protein_gap`/`fat_excess` (absolutos) descartados como
+criterio de comparacion entre recetas porque dependen del tamaño de
+racion; `protein_per_100kcal` y `fat_pct_kcal` (ratios) son los que
+ordenan bien. Arquetipo de referencia: ppk=5.6, fat%=20.
+
+| Receta | kcal/racion | ppk | fat% |
+|---|---|---|---|
+| Merluza con patata al horno | 334.0 | 10.09 | 10.0 |
+| Pollo al curry con arroz | 785.2 | 5.96 | 16.4 |
+| Ensalada de atún | 385.8 | 5.18 | 71.4 |
+| Pasta con albóndigas | 1019.5 | 4.71 | 43.4 |
+
+La prediccion de la SALIDA se cumple solo a medias: el curry sobrevive
+(ppk y fat% razonables), pero la pasta con albondigas NO — su fat%
+(43.4) es mas del doble del arquetipo, y sigue llevando carne picada
+generica (20.50 g grasa/100g), no lomo. Cambiar el ingrediente es
+trabajo de Fase 3 (recetario), no de esta fase: aqui solo se mide.
+Merluza tiene el mejor ppk de las cuatro pero una racion pequeña
+(334 kcal, muy por debajo del arquetipo de ~900) -- buena proporcion,
+tamaño insuficiente. Ensalada de atun es la peor en fat% (71.4%, casi
+toda su energia es grasa) por las 30 g de nueces del ingrediente.
 
 ### Fase 3 - Recetario que cubre la semana
 
