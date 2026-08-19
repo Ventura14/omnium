@@ -103,6 +103,9 @@ Nunca `supabase start` ni `supabase db reset` — ver regla dura 10.
 - Dinero en `numeric(10,2)`, nunca en float.
 - Pesos en gramos con `numeric(10,2)`. Energía en kcal enteras.
 - Un adaptador de tienda es una clase que implementa `StoreAdapter`. Añadir Mercadona debe ser un archivo nuevo, jamás un refactor.
+- Toda Server Action que ESCRIBA datos llama a `requireUser()` de `lib/auth.ts` como primera línea, sin excepción. Las lecturas no lo necesitan: RLS ya las cubre. El control estaba copiado a mano en cada acción hasta que se olvidó en /semana (2026-08-19); un solo sitio y una regla escrita es lo que impide que se repita.
+- Los `nutrition_targets` se fechan en lunes. `create_meal_plan` los resuelve contra `week_start`, que siempre es lunes, así que un objetivo fechado a media semana no aplica hasta el lunes siguiente.
+- Todas las fechas del dominio son fechas civiles de Europe/Madrid, no UTC, **tanto en TypeScript como en SQL**. Ni Vercel ni Supabase corren en Madrid: los dos usan UTC de servidor, y en la franja de 00:00 a 02:00 de Madrid dan el día anterior en silencio, sin fallar de forma ruidosa — es el mismo bug a los dos lados. En TypeScript, usa `todayInMadrid()` de `lib/dates.ts`, el único sitio donde se fija esa zona horaria; nunca derives una fecha de dominio de `new Date()` a secas en el servidor. En SQL, nunca uses `current_date` ni `now()::date` para una fecha de dominio: usa `(now() at time zone 'Europe/Madrid')::date`. Los `timestamptz` de auditoría (`created_at`) SÍ se quedan en UTC — es lo correcto para ellos, no los "arregles".
 
 ## Estado actual
 
