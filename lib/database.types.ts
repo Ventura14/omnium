@@ -434,6 +434,7 @@ export type Database = {
           source_url: string | null
           suits: Database["public"]["Enums"]["meal_type"][]
           user_id: string
+          variant: string | null
         }
         Insert: {
           batch_friendly?: boolean
@@ -448,6 +449,7 @@ export type Database = {
           source_url?: string | null
           suits?: Database["public"]["Enums"]["meal_type"][]
           user_id: string
+          variant?: string | null
         }
         Update: {
           batch_friendly?: boolean
@@ -462,6 +464,25 @@ export type Database = {
           source_url?: string | null
           suits?: Database["public"]["Enums"]["meal_type"][]
           user_id?: string
+          variant?: string | null
+        }
+        Relationships: []
+      }
+      work_location: {
+        Row: {
+          location: string
+          user_id: string
+          weekday: number
+        }
+        Insert: {
+          location: string
+          user_id: string
+          weekday: number
+        }
+        Update: {
+          location?: string
+          user_id?: string
+          weekday?: number
         }
         Relationships: []
       }
@@ -568,6 +589,50 @@ export type Database = {
           residual_pct?: never
         }
         Relationships: []
+      }
+      meal_plan_slot_details: {
+        Row: {
+          eating_out: boolean | null
+          id: string | null
+          meal: Database["public"]["Enums"]["meal_type"] | null
+          plan_id: string | null
+          recipe_id: string | null
+          recipe_name: string | null
+          recipe_variant: string | null
+          servings: number | null
+          slot_date: string | null
+          variant_mismatch: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_slots_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_slots_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_fit"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "meal_plan_slots_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "meal_plan_slots_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plan_balance: {
         Row: {

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { createPlan, assignSlot } from "./actions";
+import { todayInMadrid, addDays } from "@/lib/dates";
+import { createPlan, assignSlot, copyPreviousDay } from "./actions";
 
 // Ninguna cuenta de macros vive aqui. Esta pagina solo pinta lo que
 // devuelven create_meal_plan, recipe_fit y plan_day_totals -- toda la
@@ -26,12 +27,6 @@ function mondayOf(date: Date): string {
   return monday.toISOString().slice(0, 10);
 }
 
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(`${dateStr}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
 function formatDayLabel(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00Z`);
   return d.toLocaleDateString("es-ES", {
@@ -42,6 +37,11 @@ function formatDayLabel(dateStr: string): string {
   });
 }
 
+function weekdayName(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  return d.toLocaleDateString("es-ES", { weekday: "long", timeZone: "UTC" });
+}
+
 type SlotRow = {
   id: string;
   slot_date: string;
@@ -49,7 +49,8 @@ type SlotRow = {
   recipe_id: string | null;
   servings: number;
   eating_out: boolean;
-  recipes: { name: string } | null;
+  recipe_variant: string | null;
+  variant_mismatch: boolean;
 };
 
 type RecipeFitRow = {
@@ -78,10 +79,33 @@ export default async function SemanaPage({
   const { week, error } = await searchParams;
   const supabase = await createClient();
 
-  const referenceDate = week ? new Date(`${week}T00:00:00Z`) : new Date();
-  const weekStart = mondayOf(
-    Number.isNaN(referenceDate.getTime()) ? new Date() : referenceDate
-  );
+  // Sin ?week= explicito: adaptativo, no fijo a "actual" ni a
+  // "siguiente". Si la semana en curso YA tiene plan, el usuario esta
+  // comiendo de el -> se abre ahi. Si no lo tiene, esta planificando
+  // la que viene (domingo se cocina para la semana que empieza al dia
+  // siguiente) -> se abre en la siguiente. La fecha se ve arriba en
+  // grande, así que no hay ambiguedad sobre donde se ha caido.
+  // "Hoy" siempre via todayInMadrid() -- nunca new Date() a secas
+  // (regla en CLAUDE.md, Convenciones): Vercel corre en UTC y entre
+  // las 00:00 y las 02:00 de Madrid daria el dia anterior en silencio.
+  const todayDate = new Date(`${todayInMadrid()}T00:00:00Z`);
+
+  let weekStart: string;
+  if (week) {
+    const referenceDate = new Date(`${week}T00:00:00Z`);
+    weekStart = mondayOf(
+      Number.isNaN(referenceDate.getTime()) ? todayDate : referenceDate
+    );
+  } else {
+    const currentWeekStart = mondayOf(todayDate);
+    const { data: currentPlan } = await supabase
+      .from("meal_plans")
+      .select("id")
+      .eq("week_start", currentWeekStart)
+      .maybeSingle();
+    weekStart = currentPlan ? currentWeekStart : addDays(currentWeekStart, 7);
+  }
+
   const prevWeek = addDays(weekStart, -7);
   const nextWeek = addDays(weekStart, 7);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -99,10 +123,13 @@ export default async function SemanaPage({
   if (plan) {
     const [{ data: slots }, { data: fitRows }, { data: dayTotals }] =
       await Promise.all([
+        // variant_mismatch ya viene calculado por SQL (vista
+        // meal_plan_slot_details, comparado contra work_schedule) --
+        // "que dia toca oficina" no vive en TypeScript.
         supabase
-          .from("meal_plan_slots")
+          .from("meal_plan_slot_details")
           .select(
-            "id, slot_date, meal, recipe_id, servings, eating_out, recipes!meal_plan_slots_recipe_id_fkey(name)"
+            "id, slot_date, meal, recipe_id, servings, eating_out, recipe_variant, variant_mismatch"
           )
           .eq("plan_id", plan.id)
           .returns<SlotRow[]>(),
@@ -191,16 +218,41 @@ export default async function SemanaPage({
             proteína
           </p>
 
-          {weekDays.map((day) => {
+          {weekDays.map((day, dayIndex) => {
             const slotsOfDay = slotsByDay.get(day) ?? {};
             const totals = dayTotalsByDate.get(day);
 
             return (
               <section key={day} className="space-y-3 border-t pt-4">
                 <div className="flex items-baseline justify-between">
-                  <h2 className="text-sm font-semibold capitalize">
-                    {formatDayLabel(day)}
-                  </h2>
+                  <div className="flex items-baseline gap-3">
+                    <h2 className="text-sm font-semibold capitalize">
+                      {formatDayLabel(day)}
+                    </h2>
+                    {dayIndex > 0 ? (
+                      <form action={copyPreviousDay}>
+                        <input type="hidden" name="plan_id" value={plan.id} />
+                        <input
+                          type="hidden"
+                          name="target_date"
+                          value={day}
+                        />
+                        <input
+                          type="hidden"
+                          name="week_start"
+                          value={weekStart}
+                        />
+                        <button
+                          type="submit"
+                          className="text-xs text-gray-500 underline"
+                          title="Sobrescribe los 4 huecos de este día"
+                        >
+                          copiar {weekdayName(weekDays[dayIndex - 1])}{" "}
+                          (sobrescribe)
+                        </button>
+                      </form>
+                    ) : null}
+                  </div>
                   <DaySummary totals={totals} />
                 </div>
 
@@ -236,6 +288,13 @@ export default async function SemanaPage({
                             </option>
                           ))}
                         </select>
+
+                        {slot.variant_mismatch ? (
+                          <p className="text-xs text-amber-600">
+                            ⚠ Es variante &quot;{slot.recipe_variant}&quot;,
+                            revisa si toca ese día.
+                          </p>
+                        ) : null}
 
                         <div className="flex items-center gap-2">
                           <label htmlFor={`servings-${slot.id}`}>
@@ -301,14 +360,16 @@ function DaySummary({ totals }: { totals: DayTotalRow | undefined }) {
     );
   }
 
-  const isShort = totals.kcal_gap < 0;
+  const isShort = totals.kcal_gap < 0 || totals.protein_gap < 0;
   const hasCaveat = totals.meals_out > 0 || totals.slots_vacios > 0;
 
   return (
     <div className="text-right text-xs">
       <p className={hasCaveat ? "text-gray-500" : isShort ? "text-amber-600" : "text-green-700"}>
         {totals.kcal} kcal · {totals.protein} g prot
-        {!hasCaveat ? ` (${totals.kcal_gap >= 0 ? "+" : ""}${totals.kcal_gap} kcal)` : ""}
+        {!hasCaveat
+          ? ` (${totals.kcal_gap >= 0 ? "+" : ""}${totals.kcal_gap} kcal, ${totals.protein_gap >= 0 ? "+" : ""}${totals.protein_gap} g prot)`
+          : ""}
       </p>
       {notes.length > 0 ? (
         <p className="text-gray-500">{notes.join(" · ")}</p>
