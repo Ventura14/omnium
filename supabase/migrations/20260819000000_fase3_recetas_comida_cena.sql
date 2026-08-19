@@ -1,0 +1,13 @@
+-- 20260819000000_fase3_recetas_comida_cena.sql
+-- Intencionadamente vacia.
+--
+-- Sembraba 7 recetas personales del autor usando nombres de SU catalogo.
+-- Sobre una base nueva fallaba (recipe_id nulo al no existir esas filas)
+-- y no es esquema. El contenido se retiro al abrir el repositorio.
+--
+-- El archivo se conserva, vacio, porque su version ya esta registrada
+-- en el historial de Supabase de la base del autor: quitarlo obligaria
+-- a `supabase migration repair` ahi.
+--
+-- Datos de ejemplo para empezar: supabase/seed/ (ver README).
+select 1;
