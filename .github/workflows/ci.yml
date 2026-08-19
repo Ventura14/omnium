@@ -1,8 +1,14 @@
-name: gitleaks
+name: ci
 
 # No depende de la accion oficial gitleaks/gitleaks-action (requiere
 # licencia de pago en repos privados de organizacion). Se descarga el
 # binario directo de la release, que es MIT y gratis siempre.
+#
+# Ningun job de este archivo toca base de datos ni stack local (regla
+# 10, CLAUDE.md): scan busca secretos en el historial de git, check
+# corre tsc/eslint contra el codigo tal cual esta en el checkout. Si
+# algun dia hace falta un job que si necesite Supabase, va en un
+# archivo aparte, no aqui.
 
 on:
   push:
@@ -27,3 +33,27 @@ jobs:
 
       - name: Escanear historial completo
         run: gitleaks git --redact --config .gitleaks.toml --verbose .
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Comandos de CLAUDE.md existen de verdad
+        run: bash .github/scripts/check-claude-commands.sh
