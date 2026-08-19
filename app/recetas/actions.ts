@@ -1,8 +1,8 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
 import type { TablesInsert } from "@/lib/database.types";
 
 export type FoodSearchResult = {
@@ -86,15 +86,7 @@ export type SaveRecipeInput = {
 export async function saveRecipe(
   input: SaveRecipeInput
 ): Promise<{ error: string | null; recipeId: string | null }> {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const { supabase, user } = await requireUser();
 
   const recipeRow: TablesInsert<"recipes"> = {
     id: input.recipeId ?? undefined,
