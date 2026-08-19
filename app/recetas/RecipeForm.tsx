@@ -59,9 +59,12 @@ export default function RecipeForm({ initialRecipe }: RecipeFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Buscador: debounce simple para no disparar una peticion por tecla.
+  // El "vaciar resultados con menos de 2 caracteres" se deriva en el
+  // render (visibleSearchResults), no con un setState sincrono aqui
+  // dentro del efecto -- evita el patron que react-hooks/set-state-in-effect
+  // marca (setState sincrono en un efecto puede encadenar renders).
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
-      setSearchResults([]);
       return;
     }
     const timeout = setTimeout(async () => {
@@ -71,11 +74,15 @@ export default function RecipeForm({ initialRecipe }: RecipeFormProps) {
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
+  const visibleSearchResults =
+    searchQuery.trim().length < 2 ? [] : searchResults;
+
   // Recalculo de macros al vuelo: la aritmetica corre en Postgres
-  // (compute_recipe_macros), aqui solo se dispara la llamada.
+  // (compute_recipe_macros), aqui solo se dispara la llamada. Mismo
+  // motivo que arriba: "sin ingredientes -> sin macros" se deriva en
+  // el render (visibleDraftMacros), no con un setState sincrono.
   useEffect(() => {
     if (ingredients.length === 0) {
-      setDraftMacros(null);
       return;
     }
     computeDraftMacros(
@@ -83,6 +90,8 @@ export default function RecipeForm({ initialRecipe }: RecipeFormProps) {
       servings
     ).then(setDraftMacros);
   }, [ingredients, servings]);
+
+  const visibleDraftMacros = ingredients.length === 0 ? null : draftMacros;
 
   function addIngredient(food: FoodSearchResult) {
     setIngredients((prev) => [
@@ -247,9 +256,9 @@ export default function RecipeForm({ initialRecipe }: RecipeFormProps) {
             placeholder="pollo, arroz, tomate..."
             className="w-full rounded border px-3 py-2"
           />
-          {searchResults.length > 0 ? (
+          {visibleSearchResults.length > 0 ? (
             <ul className="max-h-64 overflow-y-auto rounded border">
-              {searchResults.map((food) => (
+              {visibleSearchResults.map((food) => (
                 <li key={food.id}>
                   <button
                     type="button"
@@ -310,23 +319,23 @@ export default function RecipeForm({ initialRecipe }: RecipeFormProps) {
 
       <section>
         <h2 className="mb-2 text-lg font-semibold">Macros por ración</h2>
-        {draftMacros ? (
+        {visibleDraftMacros ? (
           <dl className="grid grid-cols-4 gap-4 text-sm">
             <div>
               <dt className="text-gray-500">kcal</dt>
-              <dd>{draftMacros.kcal_per_serving}</dd>
+              <dd>{visibleDraftMacros.kcal_per_serving}</dd>
             </div>
             <div>
               <dt className="text-gray-500">Proteína</dt>
-              <dd>{draftMacros.protein_per_serving} g</dd>
+              <dd>{visibleDraftMacros.protein_per_serving} g</dd>
             </div>
             <div>
               <dt className="text-gray-500">Carbohidratos</dt>
-              <dd>{draftMacros.carbs_per_serving} g</dd>
+              <dd>{visibleDraftMacros.carbs_per_serving} g</dd>
             </div>
             <div>
               <dt className="text-gray-500">Grasa</dt>
-              <dd>{draftMacros.fat_per_serving} g</dd>
+              <dd>{visibleDraftMacros.fat_per_serving} g</dd>
             </div>
           </dl>
         ) : (
