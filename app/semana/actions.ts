@@ -10,6 +10,15 @@ import { createClient } from "@/lib/supabase/server";
 // cual, sin reinterpretarlo aqui.
 export async function createPlan(formData: FormData) {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   const weekStart = String(formData.get("week_start") ?? "");
 
   const { error } = await supabase.rpc("create_meal_plan", {
@@ -31,6 +40,14 @@ export async function createPlan(formData: FormData) {
 // create_meal_plan.
 export async function assignSlot(formData: FormData) {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
 
   const slotId = String(formData.get("slot_id") ?? "");
   const weekStart = String(formData.get("week_start") ?? "");
