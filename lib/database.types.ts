@@ -87,6 +87,13 @@ export type Database = {
             foreignKeyName: "cook_session_recipes_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: false
+            referencedRelation: "recipe_fit"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "cook_session_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
             referencedRelation: "recipe_macros"
             referencedColumns: ["recipe_id"]
           },
@@ -162,6 +169,9 @@ export type Database = {
       foods: {
         Row: {
           carbs_100g: number
+          carbs_convention: string
+          carbs_convention_source: string
+          carbs_total_100g: number | null
           cooked_yield: number | null
           created_at: string
           embedding: string | null
@@ -169,6 +179,7 @@ export type Database = {
           fiber_100g: number | null
           id: string
           is_excluded: boolean
+          is_staple: boolean
           kcal_100g: number
           name: string
           protein_100g: number
@@ -180,6 +191,9 @@ export type Database = {
         }
         Insert: {
           carbs_100g: number
+          carbs_convention?: string
+          carbs_convention_source?: string
+          carbs_total_100g?: number | null
           cooked_yield?: number | null
           created_at?: string
           embedding?: string | null
@@ -187,6 +201,7 @@ export type Database = {
           fiber_100g?: number | null
           id?: string
           is_excluded?: boolean
+          is_staple?: boolean
           kcal_100g: number
           name: string
           protein_100g: number
@@ -198,6 +213,9 @@ export type Database = {
         }
         Update: {
           carbs_100g?: number
+          carbs_convention?: string
+          carbs_convention_source?: string
+          carbs_total_100g?: number | null
           cooked_yield?: number | null
           created_at?: string
           embedding?: string | null
@@ -205,6 +223,7 @@ export type Database = {
           fiber_100g?: number | null
           id?: string
           is_excluded?: boolean
+          is_staple?: boolean
           kcal_100g?: number
           name?: string
           protein_100g?: number
@@ -259,6 +278,13 @@ export type Database = {
             foreignKeyName: "meal_plan_slots_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: false
+            referencedRelation: "recipe_fit"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "meal_plan_slots_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
             referencedRelation: "recipe_macros"
             referencedColumns: ["recipe_id"]
           },
@@ -285,8 +311,8 @@ export type Database = {
           created_at?: string
           id?: string
           status?: string
-          target_kcal?: number
-          target_protein?: number
+          target_kcal: number
+          target_protein: number
           user_id: string
           week_start: string
         }
@@ -365,6 +391,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "recipe_ingredients_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods_energy_check"
+            referencedColumns: ["food_id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_fit"
+            referencedColumns: ["recipe_id"]
+          },
+          {
             foreignKeyName: "recipe_ingredients_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: false
@@ -392,6 +432,7 @@ export type Database = {
           prep_minutes: number | null
           servings: number
           source_url: string | null
+          suits: Database["public"]["Enums"]["meal_type"][]
           user_id: string
         }
         Insert: {
@@ -405,6 +446,7 @@ export type Database = {
           prep_minutes?: number | null
           servings: number
           source_url?: string | null
+          suits?: Database["public"]["Enums"]["meal_type"][]
           user_id: string
         }
         Update: {
@@ -418,6 +460,7 @@ export type Database = {
           prep_minutes?: number | null
           servings?: number
           source_url?: string | null
+          suits?: Database["public"]["Enums"]["meal_type"][]
           user_id?: string
         }
         Relationships: []
@@ -496,6 +539,36 @@ export type Database = {
       }
     }
     Views: {
+      foods_energy_check: {
+        Row: {
+          energy_impossible: boolean | null
+          food_id: string | null
+          kcal_100g: number | null
+          kcal_atwater: number | null
+          name: string | null
+          residual_abs: number | null
+          residual_pct: number | null
+        }
+        Insert: {
+          energy_impossible?: never
+          food_id?: string | null
+          kcal_100g?: number | null
+          kcal_atwater?: never
+          name?: string | null
+          residual_abs?: never
+          residual_pct?: never
+        }
+        Update: {
+          energy_impossible?: never
+          food_id?: string | null
+          kcal_100g?: number | null
+          kcal_atwater?: never
+          name?: string | null
+          residual_abs?: never
+          residual_pct?: never
+        }
+        Relationships: []
+      }
       plan_balance: {
         Row: {
           balance: number | null
@@ -503,6 +576,47 @@ export type Database = {
           plan_id: string | null
           produced: number | null
           recipe_id: string | null
+        }
+        Relationships: []
+      }
+      plan_day_totals: {
+        Row: {
+          carbs: number | null
+          fat: number | null
+          kcal: number | null
+          kcal_gap: number | null
+          meals_out: number | null
+          plan_id: string | null
+          protein: number | null
+          protein_gap: number | null
+          slot_date: string | null
+          slots_vacios: number | null
+          target_kcal: number | null
+          target_protein: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_slots_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_fit: {
+        Row: {
+          carbs_per_serving: number | null
+          fat_excess: number | null
+          fat_pct_kcal: number | null
+          fat_per_serving: number | null
+          kcal_per_serving: number | null
+          name: string | null
+          protein_gap: number | null
+          protein_per_100kcal: number | null
+          protein_per_serving: number | null
+          recipe_id: string | null
+          servings: number | null
         }
         Relationships: []
       }
@@ -532,6 +646,7 @@ export type Database = {
           protein_per_serving: number
         }[]
       }
+      create_meal_plan: { Args: { p_week_start: string }; Returns: string }
       normalize_search_name: { Args: { input: string }; Returns: string }
       search_foods: {
         Args: { query: string }
