@@ -1,0 +1,13 @@
+-- 20260820010000_recetas_ingesta_fija.sql
+-- Intencionadamente vacia.
+--
+-- Sembraba 2 ingestas fijas personales del autor (media manana y merienda de oficina).
+-- Sobre una base nueva fallaba (recipe_id nulo al no existir esas filas)
+-- y no es esquema. El contenido se retiro al abrir el repositorio.
+--
+-- El archivo se conserva, vacio, porque su version ya esta registrada
+-- en el historial de Supabase de la base del autor: quitarlo obligaria
+-- a `supabase migration repair` ahi.
+--
+-- Datos de ejemplo para empezar: supabase/seed/ (ver README).
+select 1;
