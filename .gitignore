@@ -1,5 +1,12 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# datos de scrapers: son de terceros (tiendas), no van al repo.
+# dia_sample.json y mercadona_sample.json ya estaban commiteados
+# antes de esta regla (sondas de viabilidad, deliberado en su
+# momento) -- no se tocan retroactivamente, esto solo evita que se
+# repita con salidas nuevas.
+services/scrapers/data/*.json
+
 # dependencies
 /node_modules
 /.pnp

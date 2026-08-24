@@ -134,6 +134,33 @@ que usamos** (kcal directo, sin necesidad de convertir) — a diferencia
 de BEDCA, aquí no hay ambigüedad de unidad porque trae los dos valores
 explícitos.
 
+**CORRECCIÓN (2026-08-24):** lo anterior afirmaba "sin ambigüedad" y
+es falso — no hay ambigüedad de UNIDAD, pero sí puede haber
+contradicción de VALOR. Caso real: "Claras de huevo pasteurizadas
+Ovonatur 500 ml" trae `energy_value: 0` con `energy_value_kj: 205` en
+la misma ficha — 205 kJ / 4.184 ≈ 49 kcal, coherente con sus propios
+macros (Atwater: 4×10.5 + 4×0.5 + 9×0.3 = 46.7), así que el `0` es un
+dato ausente disfrazado de medición, no "cero calorías" de verdad. Que
+`energy_value` y `energy_value_kj` existan los dos NO garantiza que
+digan lo mismo. Cualquier importador que lea esta ficha debe comprobar
+que `energy_value × 4.184 ≈ energy_value_kj` antes de confiar en
+`energy_value` a solas (ver `cheapest_dia_proposal`, columna
+`kj_contradiction`, que ya lo hace).
+
+Verificado en la sonda de búsqueda por término (2026-08-24,
+`dia.py`, no `explore_dia.py`): cada entrada de `values` puede traer
+un `items` anidado con el desglose ("Grasas" trae "de las cuales
+saturadas", "Hidratos de Carbono" trae "de los cuales azúcares") que
+no aparecía en la muestra de categoría de más arriba — el nivel top
+(Grasas/Hidratos de Carbono/Proteínas/Sal) es el mismo, pero hay más
+detalle disponible del que se documentó aquí en su momento.
+
+**Convención de carbohidratos:** Dia es una etiqueta europea
+(Reglamento 1169/2011) — "Hidratos de Carbono" declara EXCLUYENDO
+fibra, igual que cualquier etiqueta europea (ver CLAUDE.md, tabla de
+vocabulario). Si algún día se ingieren estos macros a `foods`, entran
+con `carbs_convention = 'net'`.
+
 No todos los productos van a tener `nutritional_info` completo (algunos
 frescos como fruta suelta probablemente no lo traigan) — no se verificó
 sistemáticamente en esta sonda, solo en la muestra de 20 productos del
