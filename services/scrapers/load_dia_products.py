@@ -8,10 +8,15 @@ price_per_kg solo se rellena cuando Dia ya lo da en KILO
 (price_per_unit + measure_unit='KILO'); para leche (LITRO) o huevos
 (por unidad) se deja NULL en vez de inventar una conversion.
 
-kcal_100g_scraped y kj_100g_scraped se guardan CADA UNA tal como las
-publica Dia, sin que una corrija a la otra -- a veces se contradicen
-dentro de la misma ficha (ver comentario de la tabla products), y la
-vista cheapest_dia_proposal lo marca en vez de resolverlo aqui.
+kcal_100g_scraped, kj_100g_scraped y protein_100g_scraped se guardan
+CADA UNA tal como las publica Dia, sin que una corrija a la otra -- a
+veces kcal y kJ se contradicen dentro de la misma ficha (ver
+comentario de la tabla products), y la vista cheapest_dia_proposal lo
+marca en vez de resolverlo aqui. protein_100g_scraped es la proteina
+REAL de ESE producto -- necesaria para comparar productos del mismo
+food entre si (la proteina del food de BEDCA sirve para comparar
+foods distintos, no productos del mismo food -- ver el comentario de
+20260827000000_protein_100g_scraped.sql).
 
 source='scraped' en cada product_price: es una observacion real de
 esta sonda, con la fecha real de la sonda (mtime del JSON), no la
@@ -135,11 +140,17 @@ def main() -> None:
                     macros = candidate.get("macros_100g")
                     kcal_100g_scraped = macros.get("energy_value") if macros else None
                     kj_100g_scraped = macros.get("energy_value_kj") if macros else None
+                    protein_100g_scraped = None
+                    if macros:
+                        for value in macros.get("values", []):
+                            if value.get("title") == "Proteínas":
+                                protein_100g_scraped = value.get("value_per_100_g")
+                                break
 
                     cur.execute(
                         """
-                        insert into products (user_id, food_id, store, name, url, pack_size_raw, pack_size_g, price_per_kg, kcal_100g_scraped, kj_100g_scraped)
-                        values (%s, %s, %s, %s, %s, %s, null, %s, %s, %s)
+                        insert into products (user_id, food_id, store, name, url, pack_size_raw, pack_size_g, price_per_kg, kcal_100g_scraped, kj_100g_scraped, protein_100g_scraped)
+                        values (%s, %s, %s, %s, %s, %s, null, %s, %s, %s, %s)
                         returning id
                         """,
                         (
@@ -152,6 +163,7 @@ def main() -> None:
                             price_per_kg,
                             kcal_100g_scraped,
                             kj_100g_scraped,
+                            protein_100g_scraped,
                         ),
                     )
                     product_id = cur.fetchone()[0]

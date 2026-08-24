@@ -166,6 +166,20 @@ frescos como fruta suelta probablemente no lo traigan) — no se verificó
 sistemáticamente en esta sonda, solo en la muestra de 20 productos del
 informe de viabilidad.
 
+**El formato del corte cambia la fracción comestible (2026-08-24):**
+en "merluza congelada", "Rodajas de merluza argentina" gana por
+€/kg (7.62) y hasta por €/g de proteína real (0.0423) sobre "Filetes
+... sin piel" (8.73 €/kg, 0.0553 €/g) — pero una rodaja es un corte
+transversal con espina y piel, cuya porción comestible ronda el
+70-80% del peso del paquete. Al 75%, su coste real por kilo de
+pescado comible sube a ~10.16 €/kg, más caro que los filetes. La
+señal está en los propios macros: 107 kcal/100g contra 74-82 de los
+filetes no es que la rodaja sea más grasa, es que se está
+promediando pescado con hueso. Ninguna columna de `cheapest_dia_proposal`
+detecta esto todavía — es un punto ciego conocido, no resuelto.
+Misma trampa que el peso escurrido de las conservas (regla 8), en
+otro envase: el peso del paquete no es el peso del alimento.
+
 ## Categorías usadas para la muestra
 
 | Pedido | Categoría Dia | URL |

@@ -32,6 +32,7 @@ Estas no se negocian. Si una tarea parece requerir romperlas, para y pregunta.
 11. **`search_name` lo rellena siempre un trigger de Postgres** (`normalize_search_name`), tanto en INSERT como en UPDATE. Ningún cliente — ni Python, ni TypeScript — lo calcula ni lo envía.
 12. **Las legumbres requieren estado explícito: secas, cocidas o de bote escurridas** (misma clase que la regla 8, conservas). Lentejas secas ~350 kcal/100g, cocidas ~116: un factor de 3. Nunca infieras el estado a partir del nombre de la receta o del alimento.
 13. **Solo se usan alimentos CRUDOS o SECOS, y se pesa en crudo.** La merma al cocinar se modela con `foods.cooked_yield`, que ya existe en el esquema. Físicamente: hervir añade agua y BAJA la densidad calórica; asar y freír la quitan y la SUBEN. Por tanto "asado > crudo" es esperable y no es señal de nada. La bandera roja es únicamente **HERVIDO > CRUDO**, físicamente imposible, que delata macros en base seca (arroz, lenteja y garbanzo verificados). Aparte, algunas entradas "hervido" traen grasa añadida que el nombre no anuncia: "Judía verde, hervida" declara 6.79 g de grasa frente a 0.40 en cruda.
+14. **En pescado y carne, el formato del corte cambia la fracción comestible.** Rodajas, chuletas y piezas con hueso o piel no son comparables por €/kg (ni por €/g de proteína) con filetes limpios — misma clase que la regla 8 (conservas): el peso del envase no es el peso del alimento. Confirmar a mano (`products.edible_fraction`), nunca inferir del precio.
 
 ## Vocabulario del dominio
 
