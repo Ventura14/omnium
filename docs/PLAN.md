@@ -150,15 +150,36 @@ Funcion de Postgres que lee body_metrics y PROPONE el ajuste. Propone, no aplica
 
 SALIDA: /objetivos muestra la propuesta con su justificacion.
 
-### Fase 7 - Precios
+### Fase 7 - Precios  [ADELANTADA -- 2026-08-24]
 
 Solo aqui. Scraper de Dia (1 req/seg, backoff, Akamai) y de Mercadona (API publica, trae EAN). Macros que falten en Mercadona, via Open Food Facts por EAN. Matching por embeddings con pantalla de confirmacion manual, sin LLM en el camino critico. Conservas: peso escurrido siempre confirmado a mano.
 
 SALIDA: el planificador ordena las recetas por coste por gramo de proteina.
 
+**Por que se adelanta, antes que las Fases 5 y 6:** habia un motivo real
+y concreto, no "porque toca": decidir si compensa comprar por plataformas
+de reparto (con saldo de una tarjeta de beneficios tipo Cobee) frente a
+la tienda fisica exige precios comparables ya. Esperar a las Fases 5
+(lista de la compra) y 6 (fases del plan de 12 meses) por orden habria
+retrasado una decision de dinero real sin ninguna ganancia para ese
+objetivo. El orden de fases es una herramienta para priorizar, no una
+secuencia sagrada: cuando aparece un motivo real que justifica
+saltarselo, se salta y se anota por que -- igual que la regla de alcance
+de mas abajo ya pedia.
+
+Primera rebanada (2026-08-24): sonda de `services/scrapers/dia.py`
+sobre los 24 terminos de la cesta real del usuario, solo para
+verificar que el sitio responde a busqueda por termino (la sonda
+anterior, `explore_dia.py`, solo probo navegacion por categoria) y
+que calidad tiene el dato. Sin escritura en base de datos, sin
+matching, sin tablas de producto todavia -- si el scraper no pasa
+Akamai, el resto de la fase no tiene sentido construirlo.
+
 ## Fuera de alcance
 
 Cobee y Glovo (previsto en channels, se añade sin refactor). Entrenamiento y Strava (despues de nutricion; solo export manual GPX/FIT, nunca la API, sus terminos lo prohiben). Finanzas. Carrefour (Cloudflare, reevaluar tras un mes de uso). Lidl (no vende alimentacion online en España). Spec-kit y frameworks de spec-driven development: evaluado el 17/08/2026 y descartado — resuelve ambiguedad de intencion, y los fallos reales de este proyecto han sido defectos silenciosos de datos que ninguna especificacion previa detecta.
+
+**Pendiente de resondar (2026-08-24):** Carrefour da 403 de Cloudflare desde la primera peticion (sonda anterior). Hay proyectos publicos que si sacan datos de Carrefour, probablemente via un endpoint de API en vez de la web renderizada. No investigado todavia -- Dia primero.
 
 ## Regla de alcance
 

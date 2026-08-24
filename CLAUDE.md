@@ -109,7 +109,7 @@ Nunca `supabase start` ni `supabase db reset` — ver regla dura 10.
 
 ## Estado actual
 
-Fase 0-1: núcleo de nutrición. Precios introducidos a mano. **Sin scrapers todavía** — no los implementes aunque parezcan la siguiente pieza lógica.
+Fase 0-1: núcleo de nutrición terminado. Planificador semanal (Fase 4) y rotación (Fase 4c) en marcha. **Scrapers activados el 2026-08-24**, la Fase 7 (precios) se adelantó a las Fases 5 y 6 para poder decidir con datos si compensa pedir por plataformas de reparto (con saldo de una tarjeta de beneficios tipo Cobee) frente a comprar en tienda: hacían falta precios comparables ya, no dentro de varias fases. Ver docs/PLAN.md, sección Fase 7, para el detalle. Antes de esta fecha, "sin scrapers todavía" era la regla; ya no lo es — sigue existiendo la regla 9 (Akamai, 1 req/seg, sin paralelizar, backoff, nunca reintentar en bucle), que no cambia.
 
 ## Qué NO hacer
 
