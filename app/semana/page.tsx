@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { todayInMadrid, addDays } from "@/lib/dates";
+import { todayInMadrid, addDays, mondayOf } from "@/lib/dates";
 import { createPlan, assignSlot, copyPreviousDay } from "./actions";
 
 // Ninguna cuenta de macros vive aqui. Esta pagina solo pinta lo que
@@ -15,17 +15,6 @@ const MEAL_LABELS: Record<Meal, string> = {
   snack: "Merienda",
   dinner: "Cena",
 };
-
-// Lunes de la semana que contiene `date`, en UTC para no arrastrar el
-// huso horario del servidor. Solo decide que semana pintar -- no es
-// calculo nutricional, es navegacion.
-function mondayOf(date: Date): string {
-  const day = date.getUTCDay(); // 0=domingo .. 6=sabado
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(date);
-  monday.setUTCDate(date.getUTCDate() + diff);
-  return monday.toISOString().slice(0, 10);
-}
 
 function formatDayLabel(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00Z`);

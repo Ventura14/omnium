@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.17"
   }
   graphql_public: {
     Tables: {
@@ -63,6 +63,80 @@ export type Database = {
           user_id?: string
           waist_cm?: number | null
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      channel_fees: {
+        Row: {
+          cap_amount: number | null
+          channel_id: string
+          created_at: string
+          fee_type: string
+          floor_amount: number
+          id: string
+          min_order_threshold: number | null
+          pct: number
+          user_id: string
+        }
+        Insert: {
+          cap_amount?: number | null
+          channel_id: string
+          created_at?: string
+          fee_type: string
+          floor_amount?: number
+          id?: string
+          min_order_threshold?: number | null
+          pct?: number
+          user_id: string
+        }
+        Update: {
+          cap_amount?: number | null
+          channel_id?: string
+          created_at?: string
+          fee_type?: string
+          floor_amount?: number
+          id?: string
+          min_order_threshold?: number | null
+          pct?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_fees_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channels: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          markup_pct: number | null
+          notes: string | null
+          store: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          id?: string
+          markup_pct?: number | null
+          notes?: string | null
+          store: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          markup_pct?: number | null
+          notes?: string | null
+          store?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -140,6 +214,13 @@ export type Database = {
             referencedRelation: "meal_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cook_sessions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list"
+            referencedColumns: ["plan_id"]
+          },
         ]
       }
       exercises: {
@@ -181,6 +262,7 @@ export type Database = {
           is_excluded: boolean
           is_staple: boolean
           kcal_100g: number
+          macros_source_note: string | null
           name: string
           protein_100g: number
           search_name: string
@@ -203,6 +285,7 @@ export type Database = {
           is_excluded?: boolean
           is_staple?: boolean
           kcal_100g: number
+          macros_source_note?: string | null
           name: string
           protein_100g: number
           search_name: string
@@ -225,6 +308,7 @@ export type Database = {
           is_excluded?: boolean
           is_staple?: boolean
           kcal_100g?: number
+          macros_source_note?: string | null
           name?: string
           protein_100g?: number
           search_name?: string
@@ -273,6 +357,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "meal_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_slots_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list"
+            referencedColumns: ["plan_id"]
           },
           {
             foreignKeyName: "meal_plan_slots_recipe_id_fkey"
@@ -327,6 +418,86 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_rotation_slots: {
+        Row: {
+          eating_out: boolean
+          meal: Database["public"]["Enums"]["meal_type"]
+          recipe_id: string | null
+          rotation_id: string
+          servings: number
+          weekday: number
+        }
+        Insert: {
+          eating_out?: boolean
+          meal: Database["public"]["Enums"]["meal_type"]
+          recipe_id?: string | null
+          rotation_id: string
+          servings?: number
+          weekday: number
+        }
+        Update: {
+          eating_out?: boolean
+          meal?: Database["public"]["Enums"]["meal_type"]
+          recipe_id?: string | null
+          rotation_id?: string
+          servings?: number
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_rotation_slots_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_fit"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "meal_rotation_slots_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "meal_rotation_slots_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_rotation_slots_rotation_id_fkey"
+            columns: ["rotation_id"]
+            isOneToOne: false
+            referencedRelation: "meal_rotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_rotations: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       nutrition_targets: {
         Row: {
           carbs_g: number
@@ -363,6 +534,127 @@ export type Database = {
         }
         Relationships: []
       }
+      product_prices: {
+        Row: {
+          channel_id: string
+          id: string
+          observed_at: string
+          price: number
+          product_id: string
+          source: string
+        }
+        Insert: {
+          channel_id: string
+          id?: string
+          observed_at: string
+          price: number
+          product_id: string
+          source: string
+        }
+        Update: {
+          channel_id?: string
+          id?: string
+          observed_at?: string
+          price?: number
+          product_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_prices_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          chosen_by_user: boolean
+          created_at: string
+          edible_fraction: number | null
+          food_id: string | null
+          id: string
+          kcal_100g_scraped: number | null
+          kj_100g_scraped: number | null
+          name: string
+          pack_size_g: number | null
+          pack_size_is_approx: boolean
+          pack_size_raw: string | null
+          price_per_kg: number | null
+          protein_100g_scraped: number | null
+          store: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          chosen_by_user?: boolean
+          created_at?: string
+          edible_fraction?: number | null
+          food_id?: string | null
+          id?: string
+          kcal_100g_scraped?: number | null
+          kj_100g_scraped?: number | null
+          name: string
+          pack_size_g?: number | null
+          pack_size_is_approx?: boolean
+          pack_size_raw?: string | null
+          price_per_kg?: number | null
+          protein_100g_scraped?: number | null
+          store: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          chosen_by_user?: boolean
+          created_at?: string
+          edible_fraction?: number | null
+          food_id?: string | null
+          id?: string
+          kcal_100g_scraped?: number | null
+          kj_100g_scraped?: number | null
+          name?: string
+          pack_size_g?: number | null
+          pack_size_is_approx?: boolean
+          pack_size_raw?: string | null
+          price_per_kg?: number | null
+          protein_100g_scraped?: number | null
+          store?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods_energy_check"
+            referencedColumns: ["food_id"]
+          },
+          {
+            foreignKeyName: "products_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list"
+            referencedColumns: ["food_id"]
+          },
+        ]
+      }
       recipe_ingredients: {
         Row: {
           food_id: string
@@ -395,6 +687,13 @@ export type Database = {
             columns: ["food_id"]
             isOneToOne: false
             referencedRelation: "foods_energy_check"
+            referencedColumns: ["food_id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list"
             referencedColumns: ["food_id"]
           },
           {
@@ -560,6 +859,35 @@ export type Database = {
       }
     }
     Views: {
+      cheapest_dia_proposal: {
+        Row: {
+          chosen_by_user: boolean | null
+          edible_fraction: number | null
+          effective_price_per_kg: number | null
+          food_id: string | null
+          food_kcal_100g: number | null
+          food_name: string | null
+          food_protein_100g: number | null
+          kcal_100g_scraped: number | null
+          kj_100g_scraped: number | null
+          kj_contradiction: boolean | null
+          macro_check: string | null
+          motivos: string[] | null
+          nombre_solapa: boolean | null
+          pack_size_g: number | null
+          pack_size_is_approx: boolean | null
+          precio_por_g_proteina: number | null
+          price: number | null
+          price_per_kg_ajustado: number | null
+          product_id: string | null
+          product_name: string | null
+          protein_100g_scraped: number | null
+          proteina_estimada: boolean | null
+          sin_criterio_comparacion: boolean | null
+          url: string | null
+        }
+        Relationships: []
+      }
       foods_energy_check: {
         Row: {
           energy_impossible: boolean | null
@@ -612,6 +940,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "meal_plan_slots_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list"
+            referencedColumns: ["plan_id"]
+          },
+          {
             foreignKeyName: "meal_plan_slots_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: false
@@ -644,6 +979,14 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_cost_summary: {
+        Row: {
+          box_total: number | null
+          plan_id: string | null
+          prorated_total: number | null
+        }
+        Relationships: []
+      }
       plan_day_totals: {
         Row: {
           carbs: number | null
@@ -666,6 +1009,61 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "meal_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_slots_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list"
+            referencedColumns: ["plan_id"]
+          },
+        ]
+      }
+      plan_prorated_cost: {
+        Row: {
+          cost: number | null
+          food_id: string | null
+          food_name: string | null
+          grams: number | null
+          needs_manual_check: boolean | null
+          plan_id: string | null
+          price_per_kg_ajustado: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_slots_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_slots_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list"
+            referencedColumns: ["plan_id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods_energy_check"
+            referencedColumns: ["food_id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list"
+            referencedColumns: ["food_id"]
           },
         ]
       }
@@ -700,8 +1098,36 @@ export type Database = {
         }
         Relationships: []
       }
+      shopping_list: {
+        Row: {
+          chosen_by_user: boolean | null
+          estimated_cost: number | null
+          food_id: string | null
+          food_name: string | null
+          grams_leftover: number | null
+          grams_needed: number | null
+          leftover_pct: number | null
+          needs_manual_check: boolean | null
+          pack_size_g: number | null
+          pack_size_is_approx: boolean | null
+          packs_to_buy: number | null
+          plan_id: string | null
+          precio_envase: number | null
+          product_name: string | null
+          store: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      apply_rotation: {
+        Args: { p_plan_id: string; p_rotation_id: string }
+        Returns: number
+      }
+      channel_order_cost: {
+        Args: { p_channel_id: string; p_subtotal: number }
+        Returns: number
+      }
       compute_recipe_macros: {
         Args: { p_food_ids: string[]; p_grams: number[]; p_servings: number }
         Returns: {
@@ -711,8 +1137,29 @@ export type Database = {
           protein_per_serving: number
         }[]
       }
+      create_cook_session: {
+        Args: { p_cook_date: string; p_plan_id: string }
+        Returns: string
+      }
       create_meal_plan: { Args: { p_week_start: string }; Returns: string }
+      gross_salary_equivalent: { Args: { net_amount: number }; Returns: number }
       normalize_search_name: { Args: { input: string }; Returns: string }
+      plan_cook_batches: {
+        Args: { p_plan_id: string }
+        Returns: {
+          recipe_id: string
+          recipe_name: string
+          servings_consumed: number
+          servings_leftover: number
+          servings_per_batch: number
+          servings_produced: number
+          tandas: number
+        }[]
+      }
+      save_week_as_rotation: {
+        Args: { p_make_default?: boolean; p_name: string; p_plan_id: string }
+        Returns: string
+      }
       search_foods: {
         Args: { query: string }
         Returns: {

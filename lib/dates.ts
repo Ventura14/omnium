@@ -23,3 +23,14 @@ export function addDays(dateStr: string, days: number): string {
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
+
+// Lunes de la semana que contiene `date`, en UTC por el mismo motivo
+// que addDays. Compartido por /semana y /compra: los dos necesitan
+// resolver la misma semana "adaptativa" a partir de una fecha civil.
+export function mondayOf(date: Date): string {
+  const day = date.getUTCDay(); // 0=domingo .. 6=sabado
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(date);
+  monday.setUTCDate(date.getUTCDate() + diff);
+  return monday.toISOString().slice(0, 10);
+}
