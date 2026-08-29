@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { todayInMadrid, addDays, mondayOf } from "@/lib/dates";
+import { WeekNav } from "@/components/WeekNav";
 import { ShoppingBoard, type ShoppingItem, type PendingItem, type CookRow } from "./ShoppingBoard";
 
 // Toda la aritmetica (tandas, packs, costes, comisiones de canal)
@@ -15,11 +16,13 @@ type BatchRow = {
   tandas: number;
   servings_produced: number;
   servings_leftover: number;
+  prep_mode: string | null;
 };
 
 type ShoppingRow = {
   food_id: string | null;
   food_name: string | null;
+  display_name: string | null;
   grams_needed: number | null;
   product_name: string | null;
   store: string | null;
@@ -50,6 +53,19 @@ export default async function CompraPage({
 
   const todayDate = new Date(`${todayInMadrid()}T00:00:00Z`);
 
+  // defaultWeekStart se calcula siempre, se use o no el ?week=
+  // explicito -- WeekNav lo necesita para saber si mostrar el enlace
+  // "esta semana".
+  const currentWeekStart = mondayOf(todayDate);
+  const { data: currentPlan } = await supabase
+    .from("meal_plans")
+    .select("id")
+    .eq("week_start", currentWeekStart)
+    .maybeSingle();
+  const defaultWeekStart = currentPlan
+    ? currentWeekStart
+    : addDays(currentWeekStart, 7);
+
   let weekStart: string;
   if (week) {
     const referenceDate = new Date(`${week}T00:00:00Z`);
@@ -57,13 +73,7 @@ export default async function CompraPage({
       Number.isNaN(referenceDate.getTime()) ? todayDate : referenceDate
     );
   } else {
-    const currentWeekStart = mondayOf(todayDate);
-    const { data: currentPlan } = await supabase
-      .from("meal_plans")
-      .select("id")
-      .eq("week_start", currentWeekStart)
-      .maybeSingle();
-    weekStart = currentPlan ? currentWeekStart : addDays(currentWeekStart, 7);
+    weekStart = defaultWeekStart;
   }
 
   const prevWeek = addDays(weekStart, -7);
@@ -75,25 +85,21 @@ export default async function CompraPage({
     .eq("week_start", weekStart)
     .maybeSingle();
 
-  const WeekNav = (
-    <div className="flex items-center justify-between">
-      <h1 className="text-xl font-semibold">Compra</h1>
-      <div className="flex gap-4 text-sm">
-        <a href={`/compra?week=${prevWeek}`} className="underline">
-          ← semana anterior
-        </a>
-        <span className="text-muted-foreground">{weekStart}</span>
-        <a href={`/compra?week=${nextWeek}`} className="underline">
-          semana siguiente →
-        </a>
-      </div>
-    </div>
+  const nav = (
+    <WeekNav
+      basePath="/compra"
+      title="Compra"
+      weekStart={weekStart}
+      defaultWeekStart={defaultWeekStart}
+      prevWeek={prevWeek}
+      nextWeek={nextWeek}
+    />
   );
 
   if (!plan) {
     return (
       <main className="mx-auto max-w-5xl space-y-4 p-6">
-        {WeekNav}
+        {nav}
         <p className="text-sm text-muted-foreground">
           Todavía no hay plan para la semana del {weekStart}.{" "}
           <a href={`/semana?week=${weekStart}`} className="underline">
@@ -172,7 +178,7 @@ export default async function CompraPage({
     if (r.needs_manual_check) {
       pending.push({
         foodId: r.food_id,
-        foodName: r.food_name,
+        foodName: r.display_name ?? r.food_name,
         reason: pendingReasons.get(r.food_name) ?? "sin producto único confirmado",
       });
       continue;
@@ -181,7 +187,7 @@ export default async function CompraPage({
     const info = zone ? zoneInfo.get(zone) : undefined;
     items.push({
       foodId: r.food_id,
-      foodName: r.food_name,
+      foodName: r.display_name ?? r.food_name,
       productName: r.product_name,
       gramsNeeded: r.grams_needed ?? 0,
       packsToBuy: r.packs_to_buy,
@@ -194,13 +200,21 @@ export default async function CompraPage({
     });
   }
 
-  const cookRows: CookRow[] = (batches ?? []).map((b) => ({
-    recipeId: b.recipe_id,
-    recipeName: b.recipe_name,
-    tandas: b.tandas,
-    servingsProduced: b.servings_produced,
-  }));
-  const totalLeftoverServings = (batches ?? []).reduce(
+  // Solo las recetas de comida/cena se cocinan en tanda el domingo --
+  // las de ingesta fija (media manana/merienda, prep_mode
+  // 'al_momento') se montan cada dia, no tiene sentido listarlas
+  // aqui como si hubiera que prepararlas por adelantado.
+  const batchRows = (batches ?? []).filter((b) => b.prep_mode === "batch");
+  const cookRows: CookRow[] = batchRows
+    .slice()
+    .sort((a, b) => b.tandas - a.tandas)
+    .map((b) => ({
+      recipeId: b.recipe_id,
+      recipeName: b.recipe_name,
+      tandas: b.tandas,
+      servingsProduced: b.servings_produced,
+    }));
+  const totalLeftoverServings = batchRows.reduce(
     (sum, b) => sum + b.servings_leftover,
     0
   );
@@ -237,7 +251,7 @@ export default async function CompraPage({
 
   return (
     <main className="mx-auto max-w-5xl space-y-4 p-6">
-      {WeekNav}
+      {nav}
       <p className="text-sm text-muted-foreground">
         {items.length + pending.length} productos · cocinas el domingo{" "}
         {addDays(weekStart, -1)}

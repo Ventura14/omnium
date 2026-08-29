@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { todayInMadrid, addDays, mondayOf } from "@/lib/dates";
+import { WeekNav } from "@/components/WeekNav";
 import { createPlan, assignSlot, copyPreviousDay } from "./actions";
 
 // Ninguna cuenta de macros vive aqui. Esta pagina solo pinta lo que
@@ -79,6 +80,16 @@ export default async function SemanaPage({
   // las 00:00 y las 02:00 de Madrid daria el dia anterior en silencio.
   const todayDate = new Date(`${todayInMadrid()}T00:00:00Z`);
 
+  const currentWeekStart = mondayOf(todayDate);
+  const { data: currentPlan } = await supabase
+    .from("meal_plans")
+    .select("id")
+    .eq("week_start", currentWeekStart)
+    .maybeSingle();
+  const defaultWeekStart = currentPlan
+    ? currentWeekStart
+    : addDays(currentWeekStart, 7);
+
   let weekStart: string;
   if (week) {
     const referenceDate = new Date(`${week}T00:00:00Z`);
@@ -86,13 +97,7 @@ export default async function SemanaPage({
       Number.isNaN(referenceDate.getTime()) ? todayDate : referenceDate
     );
   } else {
-    const currentWeekStart = mondayOf(todayDate);
-    const { data: currentPlan } = await supabase
-      .from("meal_plans")
-      .select("id")
-      .eq("week_start", currentWeekStart)
-      .maybeSingle();
-    weekStart = currentPlan ? currentWeekStart : addDays(currentWeekStart, 7);
+    weekStart = defaultWeekStart;
   }
 
   const prevWeek = addDays(weekStart, -7);
@@ -172,18 +177,14 @@ export default async function SemanaPage({
 
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Semana</h1>
-        <div className="flex gap-4 text-sm">
-          <a href={`/semana?week=${prevWeek}`} className="underline">
-            ← semana anterior
-          </a>
-          <span className="text-gray-500">{weekStart}</span>
-          <a href={`/semana?week=${nextWeek}`} className="underline">
-            semana siguiente →
-          </a>
-        </div>
-      </div>
+      <WeekNav
+        basePath="/semana"
+        title="Semana"
+        weekStart={weekStart}
+        defaultWeekStart={defaultWeekStart}
+        prevWeek={prevWeek}
+        nextWeek={nextWeek}
+      />
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 

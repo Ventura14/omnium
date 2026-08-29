@@ -34,3 +34,27 @@ export function mondayOf(date: Date): string {
   monday.setUTCDate(date.getUTCDate() + diff);
   return monday.toISOString().slice(0, 10);
 }
+
+// "Semana del 7 al 13 de septiembre" -- nunca ISO en la interfaz.
+// Compartido por /semana y /compra, mismo criterio que mondayOf.
+export function formatWeekRange(weekStart: string): string {
+  const start = new Date(`${weekStart}T00:00:00Z`);
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+
+  const startDay = start.getUTCDate();
+  const endDay = end.getUTCDate();
+  const startMonth = start.toLocaleDateString("es-ES", {
+    month: "long",
+    timeZone: "UTC",
+  });
+  const endMonth = end.toLocaleDateString("es-ES", {
+    month: "long",
+    timeZone: "UTC",
+  });
+
+  if (startMonth === endMonth) {
+    return `Semana del ${startDay} al ${endDay} de ${endMonth}`;
+  }
+  return `Semana del ${startDay} de ${startMonth} al ${endDay} de ${endMonth}`;
+}

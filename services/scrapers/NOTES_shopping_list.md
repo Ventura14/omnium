@@ -102,3 +102,51 @@ Dos opciones sobre la mesa, ninguna construida:
      reintento, indicador de "pendiente de sincronizar" por fila,
      manejo del caso de que el estado del servidor haya cambiado
      mientras tanto. Riesgo real de retrasar la entrega.
+
+**Aplicado: opción A** (2026-08-29) -- `try/catch` con reversión
+explícita en `ShoppingBoard.tsx` (no depende de si `useOptimistic`
+revierte solo, que no estaba verificado), banner de aviso sin
+dependencias nuevas, y `app/compra/error.tsx` como red de seguridad
+para lo que el `try/catch` no prevea. La opción B queda como
+candidata para más adelante, a decidir con datos de uso real: si el
+Dia del usuario tiene buena cobertura, B habría sido trabajo de sobra
+justo en la semana que no sobra.
+
+La mitigación más barata de todas no es código: **cargar `/compra`
+antes de entrar a la tienda**. Con la lista ya renderizada en el
+navegador, lo único que necesita red de verdad es guardar cada
+tachado -- el fallo que arregla la opción A. Si el móvil pierde
+cobertura después de cargar la página, todo lo demás sigue
+funcionando.
+
+## display_name: dos nombres de BEDCA son un error, no una preferencia (2026-08-29)
+
+Al construir `foods.display_name` para que la lista se lea sin
+sintaxis de catálogo científico, se encontraron dos casos donde
+acortar el nombre de BEDCA habría propagado un error ya conocido del
+catálogo, no solo quitado ruido:
+
+  - **"Nuez, cruda, con cáscara"** declara 59 g de grasa por 100 g.
+    La cáscara no tiene grasa -- esos macros son de grano PELADO. El
+    producto que gana el ranking es "Nueces peladas al natural
+    Naturmundo 200 g": el sistema calcula con grano pelado y compra
+    grano pelado. Un `display_name` de "Nueces con cáscara" le habría
+    dicho al usuario que comprara un producto con menos de la mitad
+    de nuez comestible por peso frente al que realmente hace falta.
+    `display_name` = "Nueces peladas".
+
+  - **"Pollo, pechuga, con piel, crudo"** declara 1.20 g de grasa,
+    que es el valor de pechuga SIN piel (documentado en CLAUDE.md,
+    regla 13, como ejemplo de nombre que no describe su contenido).
+    El producto elegido es "Pechuga de pollo entera formato
+    familiar", sin piel. `display_name` = "Pechuga de pollo" (sin
+    "con piel").
+
+Regla general para `display_name` (ver también el comentario de la
+columna en 20260907000000): describe LO QUE SE COMPRA, no repite el
+nombre de BEDCA a secas. Cuando BEDCA y el producto real coinciden,
+se conserva el detalle que distingue producto en el lineal (virgen
+extra vs refinado, bajo en grasa vs normal, 0% vs entero). Cuando el
+nombre de BEDCA es un error heredado del catálogo -- estos dos casos
+verificados -- `display_name` corrige, no repite. Si aparece un
+tercer caso, este es el patrón a seguir.

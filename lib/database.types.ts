@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   graphql_public: {
     Tables: {
@@ -255,6 +255,7 @@ export type Database = {
           carbs_total_100g: number | null
           cooked_yield: number | null
           created_at: string
+          display_name: string | null
           embedding: string | null
           fat_100g: number
           fiber_100g: number | null
@@ -279,6 +280,7 @@ export type Database = {
           carbs_total_100g?: number | null
           cooked_yield?: number | null
           created_at?: string
+          display_name?: string | null
           embedding?: string | null
           fat_100g: number
           fiber_100g?: number | null
@@ -303,6 +305,7 @@ export type Database = {
           carbs_total_100g?: number | null
           cooked_yield?: number | null
           created_at?: string
+          display_name?: string | null
           embedding?: string | null
           fat_100g?: number
           fiber_100g?: number | null
@@ -1190,6 +1193,7 @@ export type Database = {
       shopping_list: {
         Row: {
           chosen_by_user: boolean | null
+          display_name: string | null
           estimated_cost: number | null
           food_id: string | null
           food_name: string | null
@@ -1236,6 +1240,7 @@ export type Database = {
       plan_cook_batches: {
         Args: { p_plan_id: string }
         Returns: {
+          prep_mode: string
           recipe_id: string
           recipe_name: string
           servings_consumed: number

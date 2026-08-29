@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useOptimistic, useTransition } from "react";
+import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -92,18 +92,35 @@ export function ShoppingBoard({
     }
   );
   const [, startTransition] = useTransition();
+  const [saveError, setSaveError] = useState<string | null>(null);
 
+  // No nos fiamos de que useOptimistic revierta solo si la Server
+  // Action falla (documentado por React, no verificado aqui contra
+  // un fallo de red de verdad) -- el catch revierte a mano al valor
+  // anterior, para que el contador de "llevas" nunca sume un check
+  // que no llego a guardarse. Sin cobertura (un super grande, a
+  // menudo bajo rasante, es de los peores sitios para
+  // esto) esta rama es la que se ejecuta.
   function toggle(item: ShoppingItem) {
     if (item.packsToBuy === null) return;
     const current = checks.get(item.foodId) ?? null;
     const isFresh = current !== null && current === item.packsToBuy;
+    const previous = current;
     startTransition(async () => {
-      if (isFresh) {
-        setChecks({ foodId: item.foodId, packs: null });
-        await clearShoppingCheck(planId, item.foodId);
-      } else {
-        setChecks({ foodId: item.foodId, packs: item.packsToBuy! });
-        await setShoppingCheck(planId, item.foodId, item.packsToBuy!);
+      setSaveError(null);
+      try {
+        if (isFresh) {
+          setChecks({ foodId: item.foodId, packs: null });
+          await clearShoppingCheck(planId, item.foodId);
+        } else {
+          setChecks({ foodId: item.foodId, packs: item.packsToBuy! });
+          await setShoppingCheck(planId, item.foodId, item.packsToBuy!);
+        }
+      } catch {
+        setChecks({ foodId: item.foodId, packs: previous });
+        setSaveError(
+          `No se pudo guardar ${item.foodName}. Vuelve a tocarlo cuando tengas cobertura.`
+        );
       }
     });
   }
@@ -140,7 +157,24 @@ export function ShoppingBoard({
     checkableCount > 0 ? (checkedCount / checkableCount) * 100 : 0;
 
   return (
-    <div className="grid gap-6 md:grid-cols-[1fr_19rem] md:gap-0">
+    <div className="flex flex-col gap-4">
+      {saveError ? (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          <span>{saveError}</span>
+          <button
+            type="button"
+            onClick={() => setSaveError(null)}
+            className="shrink-0 underline"
+          >
+            ocultar
+          </button>
+        </div>
+      ) : null}
+
+      <div className="grid gap-6 md:grid-cols-[1fr_19rem] md:gap-0">
       <aside className="order-first flex flex-col gap-6 border-b pb-6 md:order-last md:border-b-0 md:border-l md:py-4 md:pl-6">
         <div className="flex flex-col gap-2">
           <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
@@ -285,6 +319,7 @@ export function ShoppingBoard({
           </section>
         ) : null}
       </main>
+      </div>
     </div>
   );
 }
