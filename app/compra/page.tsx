@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { createClient } from "@/lib/supabase/server";
 import { todayInMadrid, addDays, mondayOf } from "@/lib/dates";
 import { WeekNav } from "@/components/WeekNav";
@@ -41,11 +39,11 @@ type ShoppingRow = {
 
 type ProposalRow = {
   food_id: string | null;
-  product_id: string | null;
   food_name: string | null;
   product_name: string | null;
   sin_criterio_comparacion: boolean | null;
   motivos: string[] | null;
+  image_path: string | null;
 };
 
 export default async function CompraPage({
@@ -141,7 +139,7 @@ export default async function CompraPage({
     supabase.from("channels").select("id, store, channel"),
     supabase
       .from("cheapest_dia_proposal")
-      .select("food_id, product_id, food_name, product_name, sin_criterio_comparacion, motivos")
+      .select("food_id, food_name, product_name, sin_criterio_comparacion, motivos, image_path")
       .returns<ProposalRow[]>(),
     supabase
       .from("shopping_check")
@@ -169,30 +167,19 @@ export default async function CompraPage({
   );
 
   const pendingReasons = new Map<string, string>();
-  const productIdByFoodId = new Map<string, string>();
+  const imagePathByFoodId = new Map<string, string>();
   for (const row of proposals ?? []) {
     if (!row.food_id) continue;
     if (row.sin_criterio_comparacion) {
       if (!row.food_name || pendingReasons.has(row.food_name)) continue;
       pendingReasons.set(row.food_name, row.motivos?.[0] ?? "sin motivo registrado");
-    } else if (row.product_id) {
-      productIdByFoodId.set(row.food_id, row.product_id);
+    } else if (row.image_path) {
+      imagePathByFoodId.set(row.food_id, row.image_path);
     }
   }
 
   const items: ShoppingItem[] = [];
   const pending: PendingItem[] = [];
-
-  // Miniatura solo si el archivo existe de verdad -- si un producto
-  // no tiene foto descargada, la fila NO reserva el hueco (el
-  // usuario senalo que un cuadro gris vacio ocupa sitio sin aportar).
-  function imagePathFor(foodId: string): string | null {
-    const productId = productIdByFoodId.get(foodId);
-    if (!productId) return null;
-    const filename = `${productId}.jpg`;
-    const onDisk = existsSync(path.join(process.cwd(), "public", "products", filename));
-    return onDisk ? `/products/${filename}` : null;
-  }
 
   for (const r of shoppingRows ?? []) {
     if (!r.food_id || !r.food_name) continue;
@@ -218,7 +205,7 @@ export default async function CompraPage({
       zoneLabel: info?.label ?? "Sin clasificar",
       zoneOrder: info?.order ?? 99,
       checkedPacks: checkedByFoodId.get(r.food_id) ?? null,
-      imagePath: imagePathFor(r.food_id),
+      imagePath: imagePathByFoodId.get(r.food_id) ?? null,
     });
   }
 

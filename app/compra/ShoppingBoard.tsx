@@ -95,6 +95,12 @@ export function ShoppingBoard({
   );
   const [, startTransition] = useTransition();
   const [saveError, setSaveError] = useState<string | null>(null);
+  // image_path viene de la base de datos (fiable en cualquier
+  // entorno, ver 20260909000000) -- pero si el archivo se borra a
+  // mano del disco despues, la miniatura debe desaparecer igual, sin
+  // hueco reservado. onError cubre ese caso en el cliente, sin volver
+  // a depender del filesystem del servidor en cada peticion.
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
 
   // No nos fiamos de que useOptimistic revierta solo si la Server
   // Action falla (documentado por React, no verificado aqui contra
@@ -267,13 +273,16 @@ export function ShoppingBoard({
                       className="size-6"
                     />
                   </label>
-                  {item.imagePath ? (
+                  {item.imagePath && !brokenImages.has(item.foodId) ? (
                     <Image
                       src={item.imagePath}
                       alt=""
                       width={40}
                       height={40}
                       className="size-10 shrink-0 rounded-md border object-cover"
+                      onError={() =>
+                        setBrokenImages((prev) => new Set(prev).add(item.foodId))
+                      }
                     />
                   ) : null}
                   <div className="min-w-0 flex-1">
