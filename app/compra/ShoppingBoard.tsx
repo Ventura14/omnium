@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useOptimistic, useState, useTransition } from "react";
+import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -42,6 +43,7 @@ export type ShoppingItem = {
   zoneLabel: string;
   zoneOrder: number;
   checkedPacks: number | null;
+  imagePath: string | null;
 };
 
 export type PendingItem = {
@@ -265,7 +267,15 @@ export function ShoppingBoard({
                       className="size-6"
                     />
                   </label>
-                  <div className="size-10 shrink-0 rounded-md border bg-muted" />
+                  {item.imagePath ? (
+                    <Image
+                      src={item.imagePath}
+                      alt=""
+                      width={40}
+                      height={40}
+                      className="size-10 shrink-0 rounded-md border object-cover"
+                    />
+                  ) : null}
                   <div className="min-w-0 flex-1">
                     <p
                       className={`flex flex-wrap items-center gap-1.5 font-medium ${

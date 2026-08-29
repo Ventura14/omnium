@@ -597,6 +597,7 @@ export type Database = {
           edible_fraction: number | null
           food_id: string | null
           id: string
+          image_url: string | null
           kcal_100g_scraped: number | null
           kj_100g_scraped: number | null
           name: string
@@ -615,6 +616,7 @@ export type Database = {
           edible_fraction?: number | null
           food_id?: string | null
           id?: string
+          image_url?: string | null
           kcal_100g_scraped?: number | null
           kj_100g_scraped?: number | null
           name: string
@@ -633,6 +635,7 @@ export type Database = {
           edible_fraction?: number | null
           food_id?: string | null
           id?: string
+          image_url?: string | null
           kcal_100g_scraped?: number | null
           kj_100g_scraped?: number | null
           name?: string

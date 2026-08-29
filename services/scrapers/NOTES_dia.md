@@ -204,3 +204,57 @@ Viable sin navegador headless, sin necesidad de las APIs internas
 (`search-back`, `pdp-back`) descubiertas — el SSR ya trae todo. Riesgo
 real: Akamai Bot Manager en volumen alto sostenido, no probado aquí a
 propósito.
+
+## Imágenes de producto (2026-08-29)
+
+`product.images` en la ficha individual (`INITIAL_STATE.product`, no
+en el listado de categoría) es un array de rutas relativas, la
+primera es la vista "ISO" (estudio) — confirmado con una sonda de un
+producto antes de escribir `dia_images.py`. No estaba en el JSON del
+scrape original (`dia.py`, solo guardaba `macros_100g`), hizo falta
+un segundo paso dirigido solo a los ganadores de `shopping_list` (23
+productos, no los 108 del catálogo completo).
+
+**Descargadas, redimensionadas a 240px y guardadas en `public/products/`
+del repo — NO en Supabase Storage.** Decisión explícita, no la
+opción por defecto: Storage exigía una `SUPABASE_SERVICE_ROLE_KEY`
+que no existe en este entorno, y la alternativa de escribir con la
+`anon key` (ya pública por diseño) habría dejado el bucket abierto a
+escritura de cualquiera. Se descartó por riesgo de seguridad, no se
+implementó ni se ofreció como atajo.
+
+`public/products/` gana hoy por tamaño: 23 imágenes a 240px son
+~400 KB en total (9.7 MB en crudo a resolución completa, medido
+antes de decidir). Origen del mismo servidor que la página — una
+dependencia externa menos justo en el escenario que importa (súper
+con mala cobertura). Las originales a resolución completa se
+guardan fuera del repo, en `services/scrapers/data/images/`
+(gitignored), por si algún día hace falta otro tamaño sin volver a
+pedírselo a Dia.
+
+**Coste real de esta decisión, no ocultarlo:** los ganadores de
+`shopping_list` cambian (patata, huevos y lomo lo han hecho varias
+veces en este mismo proyecto) — con `public/`, cada cambio de
+ganador necesita descargar la foto nueva y desplegar, no solo
+actualizar una fila. Se acepta porque ese cambio YA pasa por
+revisión humana explícita en este proyecto (`chosen_by_user`,
+`pack_size_g`, `edible_fraction`) — la foto nueva viaja en un commit
+que de todos modos iba a existir.
+
+**Criterio de reversión a Storage, para cuando deje de tener
+sentido:** si el catálogo de productos crece mucho más allá de los
+~25 actuales, o si algún día las fotos se actualizan sin revisión
+humana (un cron sin confirmación manual, por ejemplo), Storage gana
+— desacopla la foto del deploy. No es una decisión para siempre, es
+la correcta al tamaño de hoy (regla dura 6, CLAUDE.md).
+
+`products.image_url` guarda la URL de ORIGEN en dia.es, no la ruta
+donde se sirve — sirve para comprobar en el futuro si la foto sigue
+siendo la misma sin re-rastrear el catálogo, y para re-descargar si
+hace falta. Nullable: sin foto, sin fila con hueco reservado (el
+usuario señaló que un cuadro gris vacío ocupa sitio sin aportar).
+
+Si el repo se abre alguna vez como open source, `public/products/`
+hay que vaciarlo antes — son imágenes de Dia, no del proyecto. Es un
+paso de checklist de esa migración, no un impedimento para hacerlo
+ahora.
