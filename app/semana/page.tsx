@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { todayInMadrid, addDays, mondayOf } from "@/lib/dates";
 import { WeekNav } from "@/components/WeekNav";
+import { resolveDefaultWeekStart } from "@/lib/weekPlan";
 import { createPlan, assignSlot, copyPreviousDay } from "./actions";
 
 // Ninguna cuenta de macros vive aqui. Esta pagina solo pinta lo que
@@ -71,9 +72,13 @@ export default async function SemanaPage({
 
   // Sin ?week= explicito: adaptativo, no fijo a "actual" ni a
   // "siguiente". Si la semana en curso YA tiene plan, el usuario esta
-  // comiendo de el -> se abre ahi. Si no lo tiene, esta planificando
-  // la que viene (domingo se cocina para la semana que empieza al dia
-  // siguiente) -> se abre en la siguiente. La fecha se ve arriba en
+  // comiendo de el -> se abre ahi. Si no, se abre en el plan mas
+  // PROXIMO en el futuro que exista (no siempre "la semana
+  // siguiente" a secas -- si hoy solo hay un plan creado para dentro
+  // de dos semanas, abrir en el hueco vacio de la semana que viene
+  // deja ese plan real a un clic sin mostrarlo). Solo si no hay
+  // ningun plan futuro, cae a la semana siguiente vacia, que es
+  // donde de verdad hace falta crear uno. La fecha se ve arriba en
   // grande, así que no hay ambiguedad sobre donde se ha caido.
   // "Hoy" siempre via todayInMadrid() -- nunca new Date() a secas
   // (regla en CLAUDE.md, Convenciones): Vercel corre en UTC y entre
@@ -81,14 +86,10 @@ export default async function SemanaPage({
   const todayDate = new Date(`${todayInMadrid()}T00:00:00Z`);
 
   const currentWeekStart = mondayOf(todayDate);
-  const { data: currentPlan } = await supabase
-    .from("meal_plans")
-    .select("id")
-    .eq("week_start", currentWeekStart)
-    .maybeSingle();
-  const defaultWeekStart = currentPlan
-    ? currentWeekStart
-    : addDays(currentWeekStart, 7);
+  const defaultWeekStart = await resolveDefaultWeekStart(
+    supabase,
+    currentWeekStart
+  );
 
   let weekStart: string;
   if (week) {

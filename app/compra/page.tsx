@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { todayInMadrid, addDays, mondayOf } from "@/lib/dates";
 import { WeekNav } from "@/components/WeekNav";
+import { resolveDefaultWeekStart } from "@/lib/weekPlan";
 import { ShoppingBoard, type ShoppingItem, type PendingItem, type CookRow } from "./ShoppingBoard";
 
 // Toda la aritmetica (tandas, packs, costes, comisiones de canal)
@@ -60,14 +61,10 @@ export default async function CompraPage({
   // explicito -- WeekNav lo necesita para saber si mostrar el enlace
   // "esta semana".
   const currentWeekStart = mondayOf(todayDate);
-  const { data: currentPlan } = await supabase
-    .from("meal_plans")
-    .select("id")
-    .eq("week_start", currentWeekStart)
-    .maybeSingle();
-  const defaultWeekStart = currentPlan
-    ? currentWeekStart
-    : addDays(currentWeekStart, 7);
+  const defaultWeekStart = await resolveDefaultWeekStart(
+    supabase,
+    currentWeekStart
+  );
 
   let weekStart: string;
   if (week) {

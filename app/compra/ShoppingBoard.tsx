@@ -191,7 +191,10 @@ export function ShoppingBoard({
           <p className="text-3xl font-semibold tabular-nums tracking-tight">
             {money(carried)}
           </p>
-          <Progress value={progressPct} />
+          <Progress
+            value={progressPct}
+            aria-valuetext={`${Math.round(progressPct)}%`}
+          />
           <p className="text-sm text-muted-foreground">
             {checkedCount} de {checkableCount} productos
           </p>
@@ -279,7 +282,7 @@ export function ShoppingBoard({
                       alt=""
                       width={40}
                       height={40}
-                      className="size-10 shrink-0 rounded-md border object-cover"
+                      className="size-10 shrink-0 rounded-md border bg-white object-contain"
                       onError={() =>
                         setBrokenImages((prev) => new Set(prev).add(item.foodId))
                       }
