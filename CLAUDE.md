@@ -10,7 +10,7 @@ Asistente personal para nutrición, entrenamiento y finanzas, de código abierto
 
 ## Stack
 
-- **Frontend:** Next.js (App Router) + TypeScript + Tailwind plano, en Vercel. shadcn/ui NO está instalado (esta sección lo daba por hecho sin estarlo) -- pendiente de decisión del usuario, no lo instales sin que lo pida explícitamente.
+- **Frontend:** Next.js (App Router) + TypeScript + Tailwind + shadcn/ui, en Vercel. shadcn/ui instalado el 2026-08-27, decisión del usuario tras ver tres mockups de /compra y /semana con sus propios datos. Componentes instalados según haga falta (empezó con checkbox, card, badge, progress, separator para /compra) -- no traer el catálogo entero de una vez.
 - **Datos:** Supabase (Postgres 15 + Auth + pgvector)
 - **Lógica:** Python 3.11+ (scrapers, matching, optimización), en Docker
 - **Migraciones:** Supabase CLI, versionadas en `supabase/migrations/`

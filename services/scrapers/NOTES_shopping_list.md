@@ -46,3 +46,59 @@ Elegir la combinación óptima de envases (potencialmente de varios
 productos distintos) para minimizar sobrante y coste a la vez es un
 problema de optimización combinatoria -- no es una consulta, es una
 fase aparte. No construido, anotado como candidato futuro.
+
+## store_zones.zone_order está sin calibrar contra la tienda real (2026-08-27)
+
+El orden 1-6 de `store_zones` (verdura → panadería → carne/pescado →
+charcutería → lácteos → despensa) es una suposición de recorrido de
+supermercado genérico, no el recorrido real de la Dia del usuario.
+Lo único que no es suposición es que `congelados` va el último
+(orden 7): se descongela si se coge antes que el resto.
+
+Esto solo se puede verificar andando por el pasillo, no desde aquí --
+pendiente de que el usuario haga la primera compra real con esta
+lista y corrija `zone_order` con un UPDATE si el recorrido no
+coincide. La patata en particular es dudosa: en muchos Dia el saco de
+4 kg está en despensa, no en frutería con la verdura suelta -- se
+dejó en `verdura_fruta` a falta de verificación, corregible con una
+sola línea.
+
+## checklist sin cobertura: la casilla puede mentir (2026-08-29, sin resolver)
+
+`ShoppingBoard` marca la casilla al instante con `useOptimistic` y
+lanza la Server Action (`setShoppingCheck`/`clearShoppingCheck`) sin
+`try/catch`. Estado real hoy, sin arreglar todavía:
+
+- Si la Server Action falla (RLS, dato inválido), lanza un `Error`
+  que nadie captura en el componente -- rechazo de promesa sin
+  manejar dentro de la transición.
+- Si la llamada ni siquiera llega al servidor (sin cobertura -- un
+  supermercado grande, a menudo bajo rasante, es de los peores sitios
+  de Madrid para esto), el fallo es el mismo: no hay `catch`.
+- No hay ningún aviso visible de que algo no se guardó. En el mejor
+  caso (si `useOptimistic` revierte solo al fallar la transición,
+  comportamiento documentado de React pero no verificado aquí en
+  vivo) la casilla se destachar sin explicación. En el peor caso, el
+  error sin capturar podría propagarse al límite de errores de
+  Next.js y tirar toda la pantalla, no solo esa fila -- perder la
+  lista entera a media compra por un fallo de red en una casilla
+  sería peor que el problema que se quería evitar.
+
+Dos opciones sobre la mesa, ninguna construida:
+
+  A) Mínimo defensible: `try/catch` alrededor de la Server Action,
+     revertir el estado optimista explícitamente en el `catch` (no
+     fiarse solo del comportamiento por defecto de React), y un aviso
+     visible ("no se pudo guardar X"). Coste bajo, sin dependencias
+     nuevas, cabe antes de que el usuario llegue a Madrid.
+
+  B) Tolerante a sin-cobertura de verdad: persistir el check en
+     localStorage/IndexedDB al momento de marcar (sobrevive un
+     reload aunque la escritura no haya llegado) y reintentar cuando
+     vuelva la conexión. Un Service Worker con Background Sync no es
+     fiable en iOS Safari, así que sería un reintento manual/por
+     evento `online` con la pestaña abierta, no sync en segundo
+     plano de verdad. Coste bastante mayor -- cola local, lógica de
+     reintento, indicador de "pendiente de sincronizar" por fila,
+     manejo del caso de que el estado del servidor haya cambiado
+     mientras tanto. Riesgo real de retrasar la entrega.

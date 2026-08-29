@@ -269,6 +269,7 @@ export type Database = {
           source: Database["public"]["Enums"]["food_source"]
           source_detail: string | null
           source_ref: string | null
+          store_zone: string | null
           user_id: string | null
         }
         Insert: {
@@ -292,6 +293,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["food_source"]
           source_detail?: string | null
           source_ref?: string | null
+          store_zone?: string | null
           user_id?: string | null
         }
         Update: {
@@ -315,9 +317,18 @@ export type Database = {
           source?: Database["public"]["Enums"]["food_source"]
           source_detail?: string | null
           source_ref?: string | null
+          store_zone?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "foods_store_zone_fkey"
+            columns: ["store_zone"]
+            isOneToOne: false
+            referencedRelation: "store_zones"
+            referencedColumns: ["zone"]
+          },
+        ]
       }
       meal_plan_slots: {
         Row: {
@@ -764,6 +775,84 @@ export type Database = {
           suits?: Database["public"]["Enums"]["meal_type"][]
           user_id?: string
           variant?: string | null
+        }
+        Relationships: []
+      }
+      shopping_check: {
+        Row: {
+          checked_at: string
+          food_id: string
+          packs_checked: number
+          plan_id: string
+          user_id: string
+        }
+        Insert: {
+          checked_at?: string
+          food_id: string
+          packs_checked: number
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          checked_at?: string
+          food_id?: string
+          packs_checked?: number
+          plan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_check_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_check_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods_energy_check"
+            referencedColumns: ["food_id"]
+          },
+          {
+            foreignKeyName: "shopping_check_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list"
+            referencedColumns: ["food_id"]
+          },
+          {
+            foreignKeyName: "shopping_check_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_check_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list"
+            referencedColumns: ["plan_id"]
+          },
+        ]
+      }
+      store_zones: {
+        Row: {
+          label: string
+          zone: string
+          zone_order: number
+        }
+        Insert: {
+          label: string
+          zone: string
+          zone_order: number
+        }
+        Update: {
+          label?: string
+          zone?: string
+          zone_order?: number
         }
         Relationships: []
       }
