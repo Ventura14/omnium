@@ -71,34 +71,34 @@ export type Database = {
           cap_amount: number | null
           channel_id: string
           created_at: string
+          created_by: string | null
           fee_type: string
           floor_amount: number
           id: string
           min_order_threshold: number | null
           pct: number
-          user_id: string
         }
         Insert: {
           cap_amount?: number | null
           channel_id: string
           created_at?: string
+          created_by?: string | null
           fee_type: string
           floor_amount?: number
           id?: string
           min_order_threshold?: number | null
           pct?: number
-          user_id: string
         }
         Update: {
           cap_amount?: number | null
           channel_id?: string
           created_at?: string
+          created_by?: string | null
           fee_type?: string
           floor_amount?: number
           id?: string
           min_order_threshold?: number | null
           pct?: number
-          user_id?: string
         }
         Relationships: [
           {
@@ -114,29 +114,29 @@ export type Database = {
         Row: {
           channel: string
           created_at: string
+          created_by: string | null
           id: string
           markup_pct: number | null
           notes: string | null
           store: string
-          user_id: string
         }
         Insert: {
           channel: string
           created_at?: string
+          created_by?: string | null
           id?: string
           markup_pct?: number | null
           notes?: string | null
           store: string
-          user_id: string
         }
         Update: {
           channel?: string
           created_at?: string
+          created_by?: string | null
           id?: string
           markup_pct?: number | null
           notes?: string | null
           store?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -225,25 +225,25 @@ export type Database = {
       }
       exercises: {
         Row: {
+          created_by: string | null
           equipment: string | null
           id: string
           muscle_group: string
           name: string
-          user_id: string
         }
         Insert: {
+          created_by?: string | null
           equipment?: string | null
           id?: string
           muscle_group: string
           name: string
-          user_id: string
         }
         Update: {
+          created_by?: string | null
           equipment?: string | null
           id?: string
           muscle_group?: string
           name?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -255,6 +255,7 @@ export type Database = {
           carbs_total_100g: number | null
           cooked_yield: number | null
           created_at: string
+          created_by: string | null
           display_name: string | null
           embedding: string | null
           fat_100g: number
@@ -271,7 +272,6 @@ export type Database = {
           source_detail: string | null
           source_ref: string | null
           store_zone: string | null
-          user_id: string | null
         }
         Insert: {
           carbs_100g: number
@@ -280,6 +280,7 @@ export type Database = {
           carbs_total_100g?: number | null
           cooked_yield?: number | null
           created_at?: string
+          created_by?: string | null
           display_name?: string | null
           embedding?: string | null
           fat_100g: number
@@ -296,7 +297,6 @@ export type Database = {
           source_detail?: string | null
           source_ref?: string | null
           store_zone?: string | null
-          user_id?: string | null
         }
         Update: {
           carbs_100g?: number
@@ -305,6 +305,7 @@ export type Database = {
           carbs_total_100g?: number | null
           cooked_yield?: number | null
           created_at?: string
+          created_by?: string | null
           display_name?: string | null
           embedding?: string | null
           fat_100g?: number
@@ -321,7 +322,6 @@ export type Database = {
           source_detail?: string | null
           source_ref?: string | null
           store_zone?: string | null
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -594,6 +594,7 @@ export type Database = {
         Row: {
           chosen_by_user: boolean
           created_at: string
+          created_by: string | null
           edible_fraction: number | null
           food_id: string | null
           id: string
@@ -609,11 +610,11 @@ export type Database = {
           protein_100g_scraped: number | null
           store: string
           url: string | null
-          user_id: string
         }
         Insert: {
           chosen_by_user?: boolean
           created_at?: string
+          created_by?: string | null
           edible_fraction?: number | null
           food_id?: string | null
           id?: string
@@ -629,11 +630,11 @@ export type Database = {
           protein_100g_scraped?: number | null
           store: string
           url?: string | null
-          user_id: string
         }
         Update: {
           chosen_by_user?: boolean
           created_at?: string
+          created_by?: string | null
           edible_fraction?: number | null
           food_id?: string | null
           id?: string
@@ -649,7 +650,6 @@ export type Database = {
           protein_100g_scraped?: number | null
           store?: string
           url?: string | null
-          user_id?: string
         }
         Relationships: [
           {
@@ -743,6 +743,7 @@ export type Database = {
         Row: {
           batch_friendly: boolean
           created_at: string
+          created_by: string | null
           freezer_ok: boolean
           fridge_days: number | null
           id: string
@@ -752,12 +753,12 @@ export type Database = {
           servings: number
           source_url: string | null
           suits: Database["public"]["Enums"]["meal_type"][]
-          user_id: string
           variant: string | null
         }
         Insert: {
           batch_friendly?: boolean
           created_at?: string
+          created_by?: string | null
           freezer_ok?: boolean
           fridge_days?: number | null
           id?: string
@@ -767,12 +768,12 @@ export type Database = {
           servings: number
           source_url?: string | null
           suits?: Database["public"]["Enums"]["meal_type"][]
-          user_id: string
           variant?: string | null
         }
         Update: {
           batch_friendly?: boolean
           created_at?: string
+          created_by?: string | null
           freezer_ok?: boolean
           fridge_days?: number | null
           id?: string
@@ -782,7 +783,6 @@ export type Database = {
           servings?: number
           source_url?: string | null
           suits?: Database["public"]["Enums"]["meal_type"][]
-          user_id?: string
           variant?: string | null
         }
         Relationships: []
@@ -1293,12 +1293,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1322,11 +1322,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1347,11 +1347,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1372,11 +1372,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1389,11 +1389,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

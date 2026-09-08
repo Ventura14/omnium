@@ -16,7 +16,7 @@ export async function addFood(formData: FormData) {
   // no modela triggers, solo columnas DEFAULT -- el cast es seguro
   // porque la fila nunca llega a existir sin ese campo relleno.
   const food = {
-    user_id: user.id,
+    created_by: user.id,
     name,
     kcal_100g: Number(formData.get("kcal_100g")),
     protein_100g: Number(formData.get("protein_100g")),

@@ -51,27 +51,26 @@ def main() -> None:
 
     with psycopg.connect(db_url) as conn:
         with conn.cursor() as cur:
-            cur.execute("select id from auth.users limit 1")
-            row = cur.fetchone()
-            if row is None:
-                print("No hay ningun usuario en auth.users", file=sys.stderr)
-                sys.exit(1)
-            user_id = row[0]
-
+            # channels es catalogo compartido (20260911000000): un
+            # canal es UNO, no uno por usuario -- ON CONFLICT ya no
+            # necesita saber quien ejecuta el script, la unicidad es
+            # (store, channel). created_by/user_id de channel_fees
+            # queda en NULL (default auth.uid(), sin sesion en una
+            # conexion directa) -- correcto: "lo metio un script".
             cur.execute(
                 """
-                insert into channels (user_id, store, channel, markup_pct)
-                values (%s, %s, %s, null)
-                on conflict (user_id, store, channel) do nothing
+                insert into channels (store, channel, markup_pct)
+                values (%s, %s, null)
+                on conflict (store, channel) do nothing
                 returning id
                 """,
-                (user_id, STORE, CHANNEL),
+                (STORE, CHANNEL),
             )
             row = cur.fetchone()
             if row is None:
                 cur.execute(
-                    "select id from channels where user_id = %s and store = %s and channel = %s",
-                    (user_id, STORE, CHANNEL),
+                    "select id from channels where store = %s and channel = %s",
+                    (STORE, CHANNEL),
                 )
                 row = cur.fetchone()
             channel_id = row[0]
@@ -80,10 +79,10 @@ def main() -> None:
             for fee_type, floor_amount, pct, cap, threshold in FEES:
                 cur.execute(
                     """
-                    insert into channel_fees (user_id, channel_id, fee_type, floor_amount, pct, cap_amount, min_order_threshold)
-                    values (%s, %s, %s, %s, %s, %s, %s)
+                    insert into channel_fees (channel_id, fee_type, floor_amount, pct, cap_amount, min_order_threshold)
+                    values (%s, %s, %s, %s, %s, %s)
                     """,
-                    (user_id, channel_id, fee_type, floor_amount, pct, cap, threshold),
+                    (channel_id, fee_type, floor_amount, pct, cap, threshold),
                 )
                 fees_inserted += 1
 

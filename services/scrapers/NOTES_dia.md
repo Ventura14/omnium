@@ -258,3 +258,46 @@ Si el repo se abre alguna vez como open source, `public/products/`
 hay que vaciarlo antes — son imágenes de Dia, no del proyecto. Es un
 paso de checklist de esa migración, no un impedimento para hacerlo
 ahora.
+
+## Primera validación contra tickets de compra reales (2026-09-08)
+
+Se contrastaron dos tickets reales de un Dia (dos compras de
+septiembre de 2026) -- primera vez que los precios
+y pesos raspados se contrastan contra una compra de verdad, no solo
+contra lo que la web de Dia publica.
+
+**Precios: 4 de 6 exactos.** Coinciden al céntimo: huevos L 3,05 €,
+manzana roja 2,19 €, plátano 1,50 €/kg, cinta de lomo adobada
+7,49 €/kg. Difieren: arroz extra (1,20 € web vs 1,15 € ticket) y
+escalopín de lomo marinado (3,99 € web vs 4,49 € ticket) -- sin
+investigar la causa (¿oferta puntual? ¿cambio de precio entre el
+scrape y la compra?), solo constatado. 4 de 6 es una señal razonable
+para la comparación Dia/Glovo, que descansa entera en estos precios.
+
+**Un aviso sobre interpretar diferencias de precio: no asumir que es
+el mismo producto.** Se llegó a leer 6,99 € → 6,49 €/kg de pechuga
+de pollo como una bajada de precio -- era falso. Son dos SKUs
+distintos comprados en semanas distintas ("Pechugas enteras de
+pollo 700 g" a 6,99 €/kg, "Pechuga entera formato familiar 1.3 Kg" a
+6,49 €/kg). Un mismo nombre coloquial ("pechuga de pollo") puede
+tapar dos productos con precio distinto -- comprobar el SKU/nombre
+exacto antes de comparar precios entre fechas.
+
+**Los pesos "Aprox." se quedan cortos, las cuatro veces observadas
+hasta ahora:**
+
+| Producto | declarado | pesado real | desvío |
+|---|---|---|---|
+| Pechugas enteras de pollo 700 g aprox. | 700 g | 601 g | -14 % |
+| Pechuga entera formato familiar 1.3 Kg aprox. | 1300 g | 894 g | -31 % |
+| Cinta de lomo adobada 900 g aprox. | 900 g | 802 g | -11 % |
+| Plátano de canarias 1 Kg aprox. | 1000 g | 900 g | -10 % |
+
+Cuatro observaciones, las cuatro por debajo del peso declarado,
+ninguna por encima. No es una distribución -- son cuatro puntos, no
+una muestra suficiente para derivar un factor de corrección (ver
+`product_weight_observations`, candidata a construirse cuando haya
+más tickets acumulados). Consecuencia real ya detectada: con el
+09/09 (894 g reales sobre 880 g que pedía la receta) el margen fue
+de 14 g; con el 01/09 (601 g reales) se habría quedado corto un
+32 % si esa hubiera sido la bandeja elegida esa semana.

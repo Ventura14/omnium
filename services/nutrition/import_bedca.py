@@ -113,7 +113,6 @@ def parse_food(food_elem: ET.Element) -> tuple[dict | None, SkippedFood | None, 
     # Postgres (normalize_search_name), que ignora lo que mande el
     # cliente. Mandarlo desde Python solo duplicaria la logica.
     row = {
-        "user_id": None,
         "name": name,
         "source": BEDCA_SOURCE,
         "source_ref": f_id,
