@@ -88,9 +88,15 @@ export async function saveRecipe(
 ): Promise<{ error: string | null; recipeId: string | null }> {
   const { supabase, user } = await requireUser();
 
+  // created_by es trazabilidad de quien creo la fila, no control de
+  // acceso (regla 3, CLAUDE.md -- recetas compartidas entre los
+  // administradores). Solo se manda al crear: si se incluyera tambien al
+  // editar, cada .upsert() sobre una receta existente reasignaria la
+  // autoria al que la edito por ultimo, perdiendo quien la creo de
+  // verdad. Al omitirlo en la fila de edicion, Postgres no lo toca.
   const recipeRow: TablesInsert<"recipes"> = {
     id: input.recipeId ?? undefined,
-    user_id: user.id,
+    ...(input.recipeId ? {} : { created_by: user.id }),
     name: input.name,
     servings: input.servings,
     prep_minutes: input.prepMinutes,

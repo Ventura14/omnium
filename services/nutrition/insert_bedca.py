@@ -1,9 +1,10 @@
 """Inserta en `foods` los alimentos de BEDCA ya transformados por
 import_bedca.py.
 
-UPSERT idempotente: la clave de conflicto es (user_id, source,
-source_ref) -- el indice foods_source_ref_unique con NULLS NOT
-DISTINCT. Reejecutar este script actualiza en vez de duplicar.
+UPSERT idempotente: la clave de conflicto es (source, source_ref) --
+el indice foods_source_ref_unique (20260911000000_shared_catalog.sql
+la simplifico: un alimento de BEDCA es UNO, no uno por usuario, igual
+que un canal). Reejecutar este script actualiza en vez de duplicar.
 
 Una sola transaccion: si cualquier fila falla, no entra ninguna.
 
@@ -40,13 +41,13 @@ DB_URL_ENV_VAR = "SUPABASE_DB_URL"
 # como en el DO UPDATE de este mismo upsert.
 UPSERT_SQL = """
 insert into foods (
-    user_id, name, source, source_ref, source_detail,
+    name, source, source_ref, source_detail,
     kcal_100g, protein_100g, carbs_100g, fat_100g, fiber_100g
 ) values (
-    %(user_id)s, %(name)s, %(source)s, %(source_ref)s, %(source_detail)s,
+    %(name)s, %(source)s, %(source_ref)s, %(source_detail)s,
     %(kcal_100g)s, %(protein_100g)s, %(carbs_100g)s, %(fat_100g)s, %(fiber_100g)s
 )
-on conflict (user_id, source, source_ref) where source_ref is not null
+on conflict (source, source_ref) where source_ref is not null
 do update set
     name = excluded.name,
     source_detail = excluded.source_detail,

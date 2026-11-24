@@ -21,7 +21,7 @@ Estas no se negocian. Si una tarea parece requerir romperlas, para y pregunta.
 
 1. **Cero lógica de negocio en TypeScript.** El frontend renderiza y envía formularios. Cálculo de macros, optimización de cesta, matching de productos y categorización de gastos viven en Python o en funciones de Postgres. El proyecto está pensado para mantenerse leyendo Python y SQL: la lógica que no se pueda auditar ahí es deuda.
 2. **Server Components por defecto.** `"use client"` solo cuando haya interacción real. Nada de gestores de estado globales.
-3. **RLS activado en todas las tablas desde el primer día**, con `user_id = auth.uid()`. Aunque ahora solo haya un usuario.
+3. **RLS activado en todas las tablas desde el primer día**, con `user_id = auth.uid()`. Aunque haya un solo usuario. Si hay varios administradores de confianza con acceso total a la base (el caso de la migración `20260911000000_shared_catalog.sql`), RLS deja de ser una barrera de seguridad entre ellos y pasa a ser organización de datos: evita que se pisen planes y compras, no protege a unos de otros. Si entra alguien que no sea de confianza, esa suposición hay que revisarla, y la auditoría de RLS (ver migración `20260910000000`) vuelve a ser relevante para las tablas personales.
 4. **Nunca commitear secretos.** `.env*` está en `.gitignore`. Los seeds son sintéticos, jamás datos reales del usuario.
 5. **Toda la nutrición en gramos.** Sin tazas, cucharadas ni unidades. La conversión, si algún día llega, se hace en capa de presentación.
 6. **No optimices rendimiento.** Un usuario, ejecución semanal. Un script que tarda 40 segundos está bien. Optimiza legibilidad.

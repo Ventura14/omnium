@@ -88,27 +88,27 @@ def main() -> None:
 
     with psycopg.connect(db_url) as conn:
         with conn.cursor() as cur:
-            cur.execute("select id from auth.users limit 1")
-            row = cur.fetchone()
-            if row is None:
-                print("No hay ningun usuario en auth.users", file=sys.stderr)
-                sys.exit(1)
-            user_id = row[0]
-
+            # channels es catalogo compartido (20260911000000): un
+            # canal es UNO, no uno por usuario -- ya no hace falta
+            # saber quien ejecuta el script para el ON CONFLICT, la
+            # unicidad es (store, channel) a secas. created_by queda
+            # en NULL (default auth.uid(), que en una conexion
+            # directa por SUPABASE_DB_URL no tiene sesion de la que
+            # leer) -- correcto y honesto: "lo metio un script".
             cur.execute(
                 """
-                insert into channels (user_id, store, channel, markup_pct)
-                values (%s, %s, %s, null)
-                on conflict (user_id, store, channel) do nothing
+                insert into channels (store, channel, markup_pct)
+                values (%s, %s, null)
+                on conflict (store, channel) do nothing
                 returning id
                 """,
-                (user_id, STORE, CHANNEL),
+                (STORE, CHANNEL),
             )
             row = cur.fetchone()
             if row is None:
                 cur.execute(
-                    "select id from channels where user_id = %s and store = %s and channel = %s",
-                    (user_id, STORE, CHANNEL),
+                    "select id from channels where store = %s and channel = %s",
+                    (STORE, CHANNEL),
                 )
                 row = cur.fetchone()
             channel_id = row[0]
@@ -149,12 +149,11 @@ def main() -> None:
 
                     cur.execute(
                         """
-                        insert into products (user_id, food_id, store, name, url, pack_size_raw, pack_size_g, price_per_kg, kcal_100g_scraped, kj_100g_scraped, protein_100g_scraped)
-                        values (%s, %s, %s, %s, %s, %s, null, %s, %s, %s, %s)
+                        insert into products (food_id, store, name, url, pack_size_raw, pack_size_g, price_per_kg, kcal_100g_scraped, kj_100g_scraped, protein_100g_scraped)
+                        values (%s, %s, %s, %s, %s, null, %s, %s, %s, %s)
                         returning id
                         """,
                         (
-                            user_id,
                             food_id,
                             STORE,
                             candidate["name"],
