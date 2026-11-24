@@ -283,21 +283,17 @@ pollo 700 g" a 6,99 €/kg, "Pechuga entera formato familiar 1.3 Kg" a
 tapar dos productos con precio distinto -- comprobar el SKU/nombre
 exacto antes de comparar precios entre fechas.
 
-**Los pesos "Aprox." se quedan cortos, las cuatro veces observadas
-hasta ahora:**
-
-| Producto | declarado | pesado real | desvío |
-|---|---|---|---|
-| Pechugas enteras de pollo 700 g aprox. | 700 g | 601 g | -14 % |
-| Pechuga entera formato familiar 1.3 Kg aprox. | 1300 g | 894 g | -31 % |
-| Cinta de lomo adobada 900 g aprox. | 900 g | 802 g | -11 % |
-| Plátano de canarias 1 Kg aprox. | 1000 g | 900 g | -10 % |
-
-Cuatro observaciones, las cuatro por debajo del peso declarado,
-ninguna por encima. No es una distribución -- son cuatro puntos, no
-una muestra suficiente para derivar un factor de corrección (ver
-`product_weight_observations`, candidata a construirse cuando haya
-más tickets acumulados). Consecuencia real ya detectada: con el
-09/09 (894 g reales sobre 880 g que pedía la receta) el margen fue
-de 14 g; con el 01/09 (601 g reales) se habría quedado corto un
-32 % si esa hubiera sido la bandeja elegida esa semana.
+**La alerta de "el aprox. se queda corto" no tiene evidencia: retirada
+(2026-09-14).** Las cuatro comparaciones que aquí figuraban durante
+tres semanas ("declarado" 700/1300/900/1000 g contra "pesado real"
+601/894/802/900 g) medían algo que no era lo que decían medir: los
+cuatro artículos se venden A PESO (confirmado contra la columna
+PRECIO KG de los tickets originales del 01/09 y 08/09) -- la caja
+cobra exactamente lo que marca la balanza, así que un peso real por
+debajo del "aprox." no es dinero perdido, es solo una pieza más
+ligera que la media. 9 de 9 artículos pesados en los tres tickets
+acumulados (01/09, 08/09, 13/09) resultaron ser a peso. Sigue sin
+comprobar si algún envase de PRECIO FIJO con peso "aprox." se queda
+corto de verdad -- ahí sí habría dinero de por medio. El escalopín de
+lomo marinado es el candidato obvio para comprobarlo (precio fijo,
+4,49 €, se compra casi cada semana) en cuanto se pese uno en casa.

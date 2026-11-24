@@ -4,8 +4,7 @@ import { useMemo, useOptimistic, useState, useTransition } from "react";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
+import { money } from "@/lib/format";
 import { setShoppingCheck, clearShoppingCheck } from "./actions";
 
 // Toda la aritmetica (packs_to_buy, estimated_cost, tandas, totales)
@@ -65,10 +64,6 @@ export type Totals = {
   glovoCost: number | null;
   grossEquivalent: number | null;
 };
-
-function money(n: number | null | undefined): string {
-  return n == null ? "—" : `${n.toFixed(2)} €`;
-}
 
 export function ShoppingBoard({
   planId,
@@ -165,11 +160,11 @@ export function ShoppingBoard({
     checkableCount > 0 ? (checkedCount / checkableCount) * 100 : 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {saveError ? (
         <div
           role="alert"
-          className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           <span>{saveError}</span>
           <button
@@ -182,165 +177,180 @@ export function ShoppingBoard({
         </div>
       ) : null}
 
-      <div className="grid gap-6 md:grid-cols-[1fr_19rem] md:gap-0">
-      <aside className="order-first flex flex-col gap-6 border-b pb-6 md:order-last md:border-b-0 md:border-l md:py-4 md:pl-6">
-        <div className="flex flex-col gap-2">
-          <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            Llevas en el carro
-          </h3>
-          <p className="text-3xl font-semibold tabular-nums tracking-tight">
-            {money(carried)}
-          </p>
-          <Progress
-            value={progressPct}
-            aria-valuetext={`${Math.round(progressPct)}%`}
-          />
-          <p className="text-sm text-muted-foreground">
-            {checkedCount} de {checkableCount} productos
-          </p>
-        </div>
-
-        <Separator />
-
-        <div className="flex flex-col gap-2">
-          <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            Cocinar el domingo
-          </h3>
-          {cookRows.map((r) => (
-            <div
-              key={r.recipeId}
-              className="flex items-baseline justify-between gap-3 border-b pb-2 text-sm last:border-b-0"
-            >
-              <span>{r.recipeName}</span>
-              <span className="whitespace-nowrap tabular-nums text-muted-foreground">
-                {r.tandas} tanda{r.tandas !== 1 ? "s" : ""} · {r.servingsProduced}
-              </span>
+      <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
+        <aside className="order-first flex flex-col gap-5 lg:sticky lg:top-5 lg:order-last lg:self-start">
+          <div className="glow-lime rounded-3xl bg-card p-6">
+            <p className="eyebrow">Llevas en el carro</p>
+            <p className="mt-2 font-display text-5xl font-bold tabular-nums">
+              {money(carried)}
+            </p>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-track">
+              <div
+                role="progressbar"
+                aria-valuenow={Math.round(progressPct)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuetext={`${checkedCount} de ${checkableCount} productos`}
+                className="h-full rounded-full bg-lime transition-[width] duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
             </div>
-          ))}
-          {totalLeftoverServings > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              Sobran {totalLeftoverServings} raciones esta semana.
+            <p className="mt-2 text-sm text-muted-foreground">
+              {checkedCount} de {checkableCount} productos
             </p>
-          ) : null}
-        </div>
+          </div>
 
-        <Separator />
+          <div className="rounded-3xl bg-lime p-6 text-primary-foreground">
+            <p className="font-display text-xs font-bold tracking-widest uppercase">
+              Caja en Dia
+            </p>
+            <p className="mt-2 font-display text-4xl font-bold tabular-nums">
+              {money(totals.boxTotal)}
+            </p>
+            <dl className="mt-4 space-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <dt className="opacity-70">Prorrateado</dt>
+                <dd className="font-semibold tabular-nums">
+                  {money(totals.proratedTotal)}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="opacity-70">Dia + comisiones de Glovo</dt>
+                <dd className="font-semibold tabular-nums">
+                  {money(totals.glovoCost)}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="opacity-70">Bruto equivalente</dt>
+                <dd className="font-semibold tabular-nums">
+                  {money(totals.grossEquivalent)}
+                </dd>
+              </div>
+            </dl>
+          </div>
 
-        <div className="flex flex-col gap-2">
-          <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            Totales
-          </h3>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Prorrateado</span>
-            <span className="tabular-nums">{money(totals.proratedTotal)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Por Glovo</span>
-            <span className="tabular-nums">{money(totals.glovoCost)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Bruto equivalente</span>
-            <span className="tabular-nums">{money(totals.grossEquivalent)}</span>
-          </div>
-          <div className="flex justify-between border-t pt-2 text-base font-semibold">
-            <span>Caja en Dia</span>
-            <span className="tabular-nums">{money(totals.boxTotal)}</span>
-          </div>
-        </div>
-      </aside>
-
-      <main className="order-last flex flex-col md:order-first md:pr-6">
-        {zones.map(([zoneLabel, zoneItems]) => (
-          <section key={zoneLabel}>
-            <h3 className="sticky top-0 bg-background py-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-              {zoneLabel}
-            </h3>
-            {zoneItems.map((item) => {
-              const current = checks.get(item.foodId) ?? null;
-              const isFresh =
-                current !== null && current === item.packsToBuy;
-              const isStale = current !== null && current !== item.packsToBuy;
-              return (
-                <div
-                  key={item.foodId}
-                  className={`flex items-start gap-3 border-b py-3 ${
-                    isStale ? "bg-amber-50 dark:bg-amber-950/30" : ""
-                  }`}
+          <div className="rounded-3xl bg-card p-6">
+            <p className="eyebrow mb-3">Cocinar el domingo</p>
+            <ul className="space-y-2">
+              {cookRows.map((r) => (
+                <li
+                  key={r.recipeId}
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-background px-4 py-3 text-sm"
                 >
-                  <label className="flex size-11 shrink-0 cursor-pointer items-center justify-center">
-                    <Checkbox
-                      checked={isFresh}
-                      indeterminate={isStale}
-                      onCheckedChange={() => toggle(item)}
-                      aria-label={`Marcar ${item.foodName}`}
-                      className="size-6"
-                    />
-                  </label>
-                  {item.imagePath && !brokenImages.has(item.foodId) ? (
-                    <Image
-                      src={item.imagePath}
-                      alt=""
-                      width={40}
-                      height={40}
-                      className="size-10 shrink-0 rounded-md border bg-white object-contain"
-                      onError={() =>
-                        setBrokenImages((prev) => new Set(prev).add(item.foodId))
-                      }
-                    />
-                  ) : null}
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`flex flex-wrap items-center gap-1.5 font-medium ${
-                        isFresh ? "text-muted-foreground line-through" : ""
-                      }`}
-                    >
-                      {item.foodName}
-                      {item.chosenByUser ? (
-                        <Badge variant="secondary">elegido</Badge>
-                      ) : null}
-                      {item.packSizeIsApprox ? (
-                        <Badge variant="outline">aprox.</Badge>
-                      ) : null}
-                    </p>
-                    <p className="truncate text-sm text-muted-foreground">
-                      {item.productName} · necesitas {item.gramsNeeded} g
-                    </p>
-                    {isStale ? (
-                      <p className="text-xs text-amber-700 dark:text-amber-500">
-                        Marcaste {current} uds, ahora hacen falta{" "}
-                        {item.packsToBuy} -- toca para actualizar
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="tabular-nums font-medium">
-                      {money(item.estimatedCost)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.packsToBuy} ud{item.packsToBuy !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </section>
-        ))}
-
-        {pending.length > 0 ? (
-          <section className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
-            <p className="mb-2 text-sm font-medium text-amber-800 dark:text-amber-400">
-              Falta decidir ({pending.length})
-            </p>
-            <ul className="space-y-1 text-sm text-amber-700 dark:text-amber-500">
-              {pending.map((p) => (
-                <li key={p.foodId}>
-                  <span className="font-medium">{p.foodName}</span> — {p.reason}
+                  <span>{r.recipeName}</span>
+                  <span className="font-display whitespace-nowrap text-muted-foreground tabular-nums">
+                    ×{r.tandas} · {r.servingsProduced}
+                  </span>
                 </li>
               ))}
             </ul>
-          </section>
-        ) : null}
-      </main>
+            {totalLeftoverServings > 0 ? (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Sobran {totalLeftoverServings} raciones esta semana.
+              </p>
+            ) : null}
+          </div>
+        </aside>
+
+        <main className="order-last flex flex-col gap-5 lg:order-first">
+          {zones.map(([zoneLabel, zoneItems]) => (
+            <section key={zoneLabel} className="rounded-3xl bg-card p-3 md:p-4">
+              <h3 className="eyebrow px-3 pt-2 pb-3">{zoneLabel}</h3>
+              <ul className="space-y-1.5">
+                {zoneItems.map((item) => {
+                  const current = checks.get(item.foodId) ?? null;
+                  const isFresh =
+                    current !== null && current === item.packsToBuy;
+                  const isStale =
+                    current !== null && current !== item.packsToBuy;
+                  return (
+                    <li
+                      key={item.foodId}
+                      className={`flex items-center gap-3 rounded-2xl px-3 py-3 transition ${
+                        isStale
+                          ? "bg-blaze/10 ring-1 ring-blaze/30"
+                          : isFresh
+                            ? "bg-background/40 opacity-60"
+                            : "bg-background"
+                      }`}
+                    >
+                      <label className="flex size-11 shrink-0 cursor-pointer items-center justify-center">
+                        <Checkbox
+                          checked={isFresh}
+                          indeterminate={isStale}
+                          onCheckedChange={() => toggle(item)}
+                          aria-label={`Marcar ${item.foodName}`}
+                          className="size-6 rounded-full"
+                        />
+                      </label>
+                      {item.imagePath && !brokenImages.has(item.foodId) ? (
+                        <Image
+                          src={item.imagePath}
+                          alt=""
+                          width={44}
+                          height={44}
+                          className="size-11 shrink-0 rounded-xl bg-white object-contain p-0.5"
+                          onError={() =>
+                            setBrokenImages((prev) =>
+                              new Set(prev).add(item.foodId)
+                            )
+                          }
+                        />
+                      ) : null}
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`flex flex-wrap items-center gap-1.5 font-medium ${
+                            isFresh ? "line-through" : ""
+                          }`}
+                        >
+                          {item.foodName}
+                          {item.chosenByUser ? (
+                            <Badge variant="secondary">elegido</Badge>
+                          ) : null}
+                          {item.packSizeIsApprox ? (
+                            <Badge variant="outline">aprox.</Badge>
+                          ) : null}
+                        </p>
+                        <p className="truncate text-sm text-muted-foreground">
+                          {item.productName} · necesitas {item.gramsNeeded} g
+                        </p>
+                        {isStale ? (
+                          <p className="text-xs text-blaze">
+                            Marcaste {current} uds, ahora hacen falta{" "}
+                            {item.packsToBuy} -- toca para actualizar
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="font-display font-semibold tabular-nums">
+                          {money(item.estimatedCost)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.packsToBuy} ud{item.packsToBuy !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+
+          {pending.length > 0 ? (
+            <section className="rounded-3xl border border-blaze/30 bg-blaze/10 p-5">
+              <p className="mb-2 font-display font-semibold text-blaze">
+                Falta decidir ({pending.length})
+              </p>
+              <ul className="space-y-1 text-sm text-blaze/90">
+                {pending.map((p) => (
+                  <li key={p.foodId}>
+                    <span className="font-medium">{p.foodName}</span> — {p.reason}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </main>
       </div>
     </div>
   );

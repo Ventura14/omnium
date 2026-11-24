@@ -1,6 +1,10 @@
+import Link from "next/link";
+import { ArrowRight, ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { todayInMadrid, addDays, mondayOf } from "@/lib/dates";
 import { WeekNav } from "@/components/WeekNav";
+import { Page, btnPrimary } from "@/components/kit";
+import { shortDate } from "@/lib/format";
 import { resolveDefaultWeekStart } from "@/lib/weekPlan";
 import { ShoppingBoard, type ShoppingItem, type PendingItem, type CookRow } from "./ShoppingBoard";
 
@@ -39,6 +43,7 @@ type ShoppingRow = {
 };
 
 type ProposalRow = {
+  channel_id: string | null;
   food_id: string | null;
   food_name: string | null;
   product_name: string | null;
@@ -98,16 +103,24 @@ export default async function CompraPage({
 
   if (!plan) {
     return (
-      <main className="mx-auto max-w-5xl space-y-4 p-6">
+      <Page>
         {nav}
-        <p className="text-sm text-muted-foreground">
-          Todavía no hay plan para la semana del {weekStart}.{" "}
-          <a href={`/semana?week=${weekStart}`} className="underline">
-            Ir a /semana para crearlo
-          </a>
-          .
-        </p>
-      </main>
+        <div className="flex flex-col items-start gap-4 rounded-3xl bg-card p-8">
+          <ShoppingCart className="size-10 text-lime" strokeWidth={1.5} />
+          <div>
+            <h2 className="font-display text-2xl font-bold">
+              Sin plan, no hay lista.
+            </h2>
+            <p className="mt-1 text-muted-foreground">
+              La lista de la compra sale del plan de la semana del{" "}
+              {shortDate(weekStart)}.
+            </p>
+          </div>
+          <Link href={`/semana?week=${weekStart}`} className={btnPrimary}>
+            Crear el plan <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      </Page>
     );
   }
 
@@ -134,9 +147,13 @@ export default async function CompraPage({
       .eq("plan_id", plan.id)
       .maybeSingle(),
     supabase.from("channels").select("id, store, channel"),
+    // Desde 20260912000000 la vista da una fila por (food, canal). Se
+    // trae todo y se acota al canal presencial mas abajo, con el id que
+    // ya se carga de `channels` (el id es por base de datos: no se
+    // puede escribir a mano).
     supabase
       .from("cheapest_dia_proposal")
-      .select("food_id, food_name, product_name, sin_criterio_comparacion, motivos, image_path")
+      .select("channel_id, food_id, food_name, product_name, sin_criterio_comparacion, motivos, image_path")
       .returns<ProposalRow[]>(),
     supabase
       .from("shopping_check")
@@ -163,10 +180,20 @@ export default async function CompraPage({
     (checks ?? []).map((c) => [c.food_id, c.packs_checked])
   );
 
+  const presencial = channels?.find(
+    (c) => c.store === "dia" && c.channel === "presencial"
+  );
+  const glovo = channels?.find(
+    (c) => c.store === "dia" && c.channel === "glovo"
+  );
+
   const pendingReasons = new Map<string, string>();
   const imagePathByFoodId = new Map<string, string>();
   for (const row of proposals ?? []) {
     if (!row.food_id) continue;
+    // Solo el canal presencial: un food con precio tambien en Glovo da
+    // dos filas y el Map se quedaria con la ultima, al azar.
+    if (!presencial || row.channel_id !== presencial.id) continue;
     if (row.sin_criterio_comparacion) {
       if (!row.food_name || pendingReasons.has(row.food_name)) continue;
       pendingReasons.set(row.food_name, row.motivos?.[0] ?? "sin motivo registrado");
@@ -225,12 +252,6 @@ export default async function CompraPage({
     0
   );
 
-  const presencial = channels?.find(
-    (c) => c.store === "dia" && c.channel === "presencial"
-  );
-  const glovo = channels?.find(
-    (c) => c.store === "dia" && c.channel === "glovo"
-  );
   const boxTotal = costSummary?.box_total ?? null;
 
   const [{ data: presencialCost }, { data: glovoCost }] = await Promise.all([
@@ -256,12 +277,18 @@ export default async function CompraPage({
       : { data: null };
 
   return (
-    <main className="mx-auto max-w-5xl space-y-4 p-6">
+    <Page>
       {nav}
-      <p className="text-sm text-muted-foreground">
-        {items.length + pending.length} productos · cocinas el domingo{" "}
-        {addDays(weekStart, -1)}
-      </p>
+      <div className="flex flex-wrap gap-3">
+        <span className="rounded-full bg-card px-4 py-2 font-display text-sm">
+          <span className="text-lime">{items.length + pending.length}</span>{" "}
+          <span className="text-muted-foreground">productos</span>
+        </span>
+        <span className="rounded-full bg-card px-4 py-2 font-display text-sm">
+          <span className="text-muted-foreground">Cocinas el </span>
+          domingo {shortDate(addDays(weekStart, -1))}
+        </span>
+      </div>
 
       <ShoppingBoard
         planId={plan.id}
@@ -277,12 +304,12 @@ export default async function CompraPage({
         }}
       />
 
-      <p className="border-t pt-4 text-xs text-muted-foreground">
+      <p className="px-1 text-xs leading-relaxed text-muted-foreground">
         Glovo se paga con saldo Cobee, dinero bruto sin tributar. El
         equivalente bruto es lo que costaría en sueldo bruto conseguir el
         importe neto de la tienda, asumiendo un tipo marginal de IRPF del
         30 % (estimación, no un dato fiscal verificado).
       </p>
-    </main>
+    </Page>
   );
 }
