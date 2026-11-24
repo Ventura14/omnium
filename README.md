@@ -104,7 +104,7 @@ Si tienes saldo de una tarjeta de beneficios que solo sirve en reparto (tipo Cob
 
 ## Arranque paso a paso
 
-Vas a montar **tu propia instancia**: tu proyecto de Supabase, tus claves, tus datos. Necesitas **Node 20+** con [pnpm](https://pnpm.io/), **Python 3.11+** con [uv](https://docs.astral.sh/uv/), la [CLI de Supabase](https://supabase.com/docs/guides/cli) y una cuenta gratuita de [Supabase](https://supabase.com/).
+Vas a montar **tu propia instancia**: tu proyecto de Supabase, tus claves, tus datos. Necesitas **Node 22.13+** con [pnpm](https://pnpm.io/), **Python 3.11+** con [uv](https://docs.astral.sh/uv/), la [CLI de Supabase](https://supabase.com/docs/guides/cli) y una cuenta gratuita de [Supabase](https://supabase.com/).
 
 ```bash
 git clone https://github.com/Ventura14/omnium.git && cd omnium && pnpm install
