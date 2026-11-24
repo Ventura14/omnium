@@ -29,7 +29,6 @@ export function Sparkline({
       <path
         className="line-draw"
         d={d}
-        pathLength={1}
         fill="none"
         stroke="var(--lime)"
         strokeWidth={strokeWidth}
