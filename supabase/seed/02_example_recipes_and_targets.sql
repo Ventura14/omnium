@@ -19,7 +19,9 @@ do $seed$
 declare
   uid uuid;
   missing text;
-  monday date := date_trunc('week', (now() at time zone 'Europe/Madrid')::date)::date;
+  -- Zona de las fechas de dominio: la fija apply_seed.py desde APP_TIMEZONE.
+  tz text := coalesce(nullif(current_setting('app.timezone', true), ''), 'Europe/Madrid');
+  monday date := date_trunc('week', (now() at time zone tz)::date)::date;
 begin
   select id into uid from auth.users order by created_at limit 1;
   if uid is null then

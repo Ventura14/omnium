@@ -14,6 +14,7 @@ Idempotente: cada seed se puede reejecutar sin duplicar filas.
 Todos los seeds van en UNA transaccion: si falla uno, no entra ninguno.
 
 Conexion: variable de entorno SUPABASE_DB_URL (la misma que insert_bedca.py).
+Opcional: APP_TIMEZONE (por defecto Europe/Madrid), para fechar el objetivo de ejemplo.
 
 Ejecutar: uv run services/nutrition/apply_seed.py
 """
@@ -26,6 +27,7 @@ import psycopg
 
 SEED_DIR = Path(__file__).resolve().parents[2] / "supabase" / "seed"
 DB_URL_ENV_VAR = "SUPABASE_DB_URL"
+TZ_ENV_VAR = "APP_TIMEZONE"
 
 
 def main() -> None:
@@ -43,6 +45,11 @@ def main() -> None:
         # Usado como context manager: commit al salir sin excepcion,
         # rollback si algo lanza -- todo o nada.
         with psycopg.connect(db_url) as conn:
+            # Misma zona que la app (APP_TIMEZONE); los seeds la leen de app.timezone.
+            conn.execute(
+                "select set_config('app.timezone', %s, true)",
+                (os.environ.get(TZ_ENV_VAR) or "Europe/Madrid",),
+            )
             for seed in seeds:
                 print(f"Aplicando {seed.name}")
                 conn.execute(seed.read_text(encoding="utf-8"))

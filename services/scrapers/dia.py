@@ -33,6 +33,8 @@ from pathlib import Path
 
 import certifi
 
+from basket import load_basket
+
 BASE_URL = "https://www.dia.es"
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -53,16 +55,7 @@ OUTPUT_FILE = DATA_DIR / "dia_cesta.json"
 
 SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
 
-# La cesta real del usuario, no una eleccion nuestra.
-SEARCH_TERMS = [
-    "patata", "leche desnatada", "plátano", "queso fresco batido",
-    "lomo de cerdo", "cebolla", "pan de barra", "pechuga de pollo",
-    "pimiento rojo", "arroz", "manzana", "champiñón",
-    "merluza congelada", "pavo fiambre", "avena", "brócoli",
-    "clara de huevo", "solomillo de ternera", "nueces",
-    "aceite de oliva virgen extra", "jamón cocido", "crema de cacahuete",
-    "queso rallado", "huevos",
-]
+# Los terminos a buscar salen de la cesta (basket.json), no del codigo.
 
 PAGE_CONTEXT_RE = re.compile(
     r'<script id="vike_pageContext" type="application/json">(.*?)</script>',
@@ -178,7 +171,7 @@ def main() -> None:
     terms_without_results = 0
     blocked_at = None
 
-    for term in SEARCH_TERMS:
+    for term in load_basket():
         print(f"Buscando: {term!r}")
         time.sleep(REQUEST_DELAY_SECONDS)
         try:

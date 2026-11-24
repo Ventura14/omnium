@@ -7,6 +7,9 @@
 # repita con salidas nuevas.
 services/scrapers/data/*.json
 
+# tu cesta de la compra (terminos -> alimentos): dato personal, ver basket.py
+services/scrapers/basket.json
+
 # imagenes originales descargadas de Dia, resolucion completa -- solo
 # para poder re-recortar en local sin volver a pedirselas a Dia.
 # Las miniaturas redimensionadas para /compra SI van al repo, en
