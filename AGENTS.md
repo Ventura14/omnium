@@ -35,6 +35,8 @@ flowchart TB
 
 ## Comandos
 
+Requiere **Node 22.13+** (lo exige pnpm 11).
+
 ```bash
 pnpm dev                            # frontend local
 pnpm build && pnpm start            # build de producción

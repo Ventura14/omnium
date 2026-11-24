@@ -43,11 +43,16 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "pnpm"
 
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
+
+      # LayoutProps/PageProps son tipos globales que Next genera; sin esto
+      # tsc falla en un checkout limpio (en local los deja `next dev`).
+      - name: Generar tipos de Next
+        run: pnpm exec next typegen
 
       - name: Typecheck
         run: pnpm typecheck
@@ -55,5 +60,5 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Comandos de CLAUDE.md existen de verdad
+      - name: Comandos de AGENTS.md existen de verdad
         run: bash .github/scripts/check-claude-commands.sh
