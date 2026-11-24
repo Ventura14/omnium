@@ -1,8 +1,10 @@
 -- 01_staples.sql
 -- Marca `is_staple = true` en un catalogo de trabajo de ejemplo: 35
 -- alimentos basicos de BEDCA (bases, proteina, lacteos, verdura, fruta,
--- grasas). El planificador y las recetas solo trabajan con alimentos
--- `is_staple`, asi que sin esto /foods y /recetas empiezan vacios.
+-- grasas). `is_staple` es la marca de "catalogo de trabajo": alimentos
+-- verificados que sirven de base para las recetas. La app no lo exige;
+-- es la convencion del proyecto (CLAUDE.md, reglas 12 y 13). Elegir los
+-- tuyos es decision tuya: esto es solo un punto de partida.
 --
 -- Es una lista de PARTIDA, no una norma: cambiala. Para quitar o anadir
 -- un alimento basta con editarlo en /foods, o con un UPDATE como este.

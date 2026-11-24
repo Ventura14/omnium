@@ -5,8 +5,9 @@
 -- y el objetivo se puede sobreescribir en /objetivos.
 --
 -- Requisitos, en este orden:
---   1. Haberte registrado en la app (/login): el seed asigna las recetas y
---      el objetivo al PRIMER usuario existente en auth.users.
+--   1. Haber creado tu usuario en Supabase (Authentication -> Users -> Add
+--      user; la app no tiene registro): el seed asigna las recetas y el
+--      objetivo al PRIMER usuario existente en auth.users.
 --   2. Haber importado BEDCA y aplicado 01_staples.sql.
 --
 -- Idempotente: se puede ejecutar varias veces sin duplicar nada.
@@ -26,7 +27,7 @@ begin
   select id into uid from auth.users order by created_at limit 1;
   if uid is null then
     raise exception
-      'No hay ningun usuario. Registrate en la app (/login) y vuelve a ejecutar el seed.';
+      'No hay ningun usuario. Crealo en el panel de Supabase (Authentication -> Users -> Add user) y vuelve a ejecutar el seed.';
   end if;
 
   create temp table _seed_recipes (

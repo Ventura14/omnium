@@ -95,7 +95,7 @@ supabase db push                    # aplica migraciones pendientes al proyecto 
 supabase gen types typescript --linked > lib/database.types.ts
 cd services && uv run pytest        # tests de Python
 uv run services/nutrition/insert_bedca.py   # catalogo de alimentos (BEDCA), una vez por base
-uv run services/nutrition/apply_seed.py     # datos de ejemplo de supabase/seed/ (necesita un usuario registrado)
+uv run services/nutrition/apply_seed.py     # datos de ejemplo de supabase/seed/ (necesita un usuario creado en Supabase)
 ```
 
 Nunca `supabase start` ni `supabase db reset` — ver regla dura 10.

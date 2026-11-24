@@ -6,7 +6,7 @@ seed.sql de forma automatica (regla dura 10, CLAUDE.md).
 
 Orden de uso en una base nueva:
   1. supabase db push                 (esquema)
-  2. registrarte en la app (/login)   (el seed necesita un usuario)
+  2. crear tu usuario en Supabase     (el seed necesita uno; la app no tiene registro)
   3. uv run services/nutrition/insert_bedca.py   (catalogo de alimentos)
   4. uv run services/nutrition/apply_seed.py     (este script)
 
@@ -55,7 +55,7 @@ def main() -> None:
                 conn.execute(seed.read_text(encoding="utf-8"))
     except psycopg.errors.RaiseException as exc:
         # Los seeds lanzan mensajes pensados para una persona
-        # ("registrate en la app", "importa BEDCA"): se muestran tal cual.
+        # ("crea tu usuario", "importa BEDCA"): se muestran tal cual.
         print(f"\nNo se aplico nada: {exc.diag.message_primary}", file=sys.stderr)
         sys.exit(1)
 
