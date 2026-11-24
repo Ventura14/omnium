@@ -40,41 +40,17 @@ from pathlib import Path
 
 import psycopg
 
+from basket import load_basket
+
 DATA_FILE = Path(__file__).parent / "data" / "dia_cesta.json"
 DB_URL_ENV_VAR = "SUPABASE_DB_URL"
 
 STORE = "dia"
 CHANNEL = "presencial"
 
-# Termino de busqueda (dia.py) -> nombre exacto del food is_staple.
-# Construido a mano contra la cesta real de 24 terminos -- no hay
-# heuristica de matching aqui, es 1:1 conocido de antemano.
-TERM_TO_FOOD = {
-    "patata": "Patata, cruda",
-    "leche desnatada": "Leche, desnatada, pasteurizada",
-    "plátano": "Plátano",
-    "queso fresco batido": "Queso fresco batido 0% M.G.",
-    "lomo de cerdo": "Carne de cerdo de capa blanca, lomo, parte magra, crudo",
-    "cebolla": "Cebolla",
-    "pan de barra": "Pan blanco, de barra",
-    "pechuga de pollo": "Pollo, pechuga, con piel, crudo",
-    "pimiento rojo": "Pimiento rojo, crudo",
-    "arroz": "Arroz",
-    "manzana": "Manzana",
-    "champiñón": "Champiñon",
-    "merluza congelada": "Merluza, congelada, cruda",
-    "pavo fiambre": "Pavo, fiambre, bajo en grasa",
-    "avena": "Avena, cruda",
-    "brócoli": "Brécol, crudo",
-    "clara de huevo": "Huevo de gallina, clara, cruda",
-    "solomillo de ternera": "Ternera, solomillo, sin grasa, crudo",
-    "nueces": "Nuez, cruda, con cáscara",
-    "aceite de oliva virgen extra": "Aceite de oliva virgen extra",
-    "jamón cocido": "Jamón cocido, categoría s/e",
-    "crema de cacahuete": "Crema de cacahuete",
-    "queso rallado": "Queso rallado, genérico",
-    "huevos": "Huevo de gallina fresco",
-}
+# Termino de busqueda (dia.py) -> nombre exacto del food is_staple: sale de
+# la cesta (basket.py), la misma que usa dia.py. 1:1 conocido de antemano,
+# no hay heuristica de matching aqui.
 
 
 def main() -> None:
@@ -83,6 +59,7 @@ def main() -> None:
         print(f"Falta la variable de entorno {DB_URL_ENV_VAR}", file=sys.stderr)
         sys.exit(1)
 
+    term_to_food = load_basket()
     data = json.loads(DATA_FILE.read_text(encoding="utf-8"))
     observed_at = datetime.fromtimestamp(DATA_FILE.stat().st_mtime, tz=timezone.utc)
 
@@ -118,7 +95,7 @@ def main() -> None:
             unmatched_terms = []
 
             for term, term_data in data["terms"].items():
-                food_name = TERM_TO_FOOD.get(term)
+                food_name = term_to_food.get(term)
                 food_id = None
                 if food_name:
                     cur.execute("select id from foods where name = %s", (food_name,))
@@ -183,12 +160,12 @@ def main() -> None:
     print(f"Productos insertados: {products_inserted}")
     print(f"Precios insertados: {prices_inserted}")
     if unmatched_terms:
-        print("Terminos sin food enlazado (revisar TERM_TO_FOOD o el catalogo):")
+        print("Terminos sin food enlazado (revisar basket.json o el catalogo):")
         for term, food_name in unmatched_terms:
             if food_name:
                 print(f"  {term!r} -> buscaba {food_name!r}, no encontrado en foods")
             else:
-                print(f"  {term!r} -> sin mapeo definido en TERM_TO_FOOD")
+                print(f"  {term!r} -> sin mapeo definido en basket.json")
 
 
 if __name__ == "__main__":

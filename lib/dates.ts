@@ -1,23 +1,34 @@
 // Unico sitio donde se fija la zona horaria de dominio. Todas las
 // fechas de dominio (week_start, slot_date, measured_on,
-// effective_from) son fechas civiles de Europe/Madrid, nunca UTC.
+// effective_from) son fechas civiles de ESA zona, nunca UTC.
 //
+// Se configura con APP_TIMEZONE (nombre IANA, p. ej. "America/Mexico_City");
+// por defecto Europe/Madrid, la zona original del proyecto. Un valor
+// invalido lanza RangeError al primer uso: falla alto, no en silencio.
+const APP_TIMEZONE = process.env.APP_TIMEZONE || "Europe/Madrid";
+
 // Vercel corre en UTC: entre las 00:00 y las 02:00 de Madrid en
 // verano (UTC+2), `new Date()` en el servidor ya esta en el dia
 // siguiente visto desde Madrid -- da la fecha equivocada sin fallar
-// ruidosamente. Nunca derives una fecha de dominio de `new Date()`
-// a secas en el servidor: usa esto.
-export function todayInMadrid(): string {
+// ruidosamente (el mismo problema en cualquier zona distinta de UTC).
+// Nunca derives una fecha de dominio de `new Date()` a secas en el
+// servidor: usa esto.
+export function todayInAppTimezone(): string {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Madrid",
+    timeZone: APP_TIMEZONE,
   }).format(new Date());
 }
 
+// Alias antiguo: las paginas lo importan con este nombre. Se mantiene
+// para no tocar cada pagina en este cambio; renombrar las llamadas a
+// todayInAppTimezone() y borrar el alias es un cambio mecanico aparte.
+export const todayInMadrid = todayInAppTimezone;
+
 // Aritmetica sobre fechas civiles YYYY-MM-DD, en UTC a proposito: una
-// vez que la fecha ya es civil (via todayInMadrid() o un ?week=
+// vez que la fecha ya es civil (via todayInAppTimezone() o un ?week=
 // explicito), sumar/restar dias no debe volver a cruzar zonas
-// horarias -- por eso esta funcion, a diferencia de todayInMadrid(),
-// no toca Europe/Madrid para nada.
+// horarias -- por eso esta funcion, a diferencia de todayInAppTimezone(),
+// no toca ninguna zona horaria.
 export function addDays(dateStr: string, days: number): string {
   const d = new Date(`${dateStr}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);

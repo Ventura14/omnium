@@ -74,7 +74,7 @@ Son restricciones duras del sistema, no preferencias sugeridas, pero **son datos
 /components          UI. shadcn/ui + composiciones propias. Sin lógica.
 /lib                 Cliente Supabase, tipos generados, helpers de formato
 /services            Python
-  /scrapers          Uno por tienda+canal. Interfaz común StoreAdapter.
+  /scrapers          Uno por tienda+canal (ver docs/PROVIDERS.md)
   /matching          food ↔ product vía embeddings + pgvector
   /optimizer         Asignación de cesta y canal
   /nutrition         Cálculo de macros, importadores BEDCA/OFF
@@ -83,6 +83,7 @@ Son restricciones duras del sistema, no preferencias sugeridas, pero **son datos
   /seed              Datos sintéticos
 /docs
   PLAN.md            Plan de implementación
+  PROVIDERS.md       Tiendas y canales: qué hay, qué está fijado a Dia, cómo añadir una
 ```
 
 ## Comandos
@@ -108,10 +109,11 @@ Nunca `supabase start` ni `supabase db reset` — ver regla dura 10.
 - Toda tabla lleva `id uuid`, `user_id uuid`, `created_at timestamptz`.
 - Dinero en `numeric(10,2)`, nunca en float.
 - Pesos en gramos con `numeric(10,2)`. Energía en kcal enteras.
-- Un adaptador de tienda es una clase que implementa `StoreAdapter`. Añadir Mercadona debe ser un archivo nuevo, jamás un refactor.
+- Objetivo de diseño: añadir una tienda debe ser un archivo nuevo, jamás un refactor. **Hoy no se cumple del todo**: `StoreAdapter` no existe como clase (Dia es un módulo plano, `services/scrapers/dia.py`) y la capa de precios en SQL tiene vistas fijadas a `store = 'dia'`. Estado real y pasos en `docs/PROVIDERS.md`.
+- La cesta de los scrapers (término de búsqueda → alimento) es un dato del usuario: vive en `services/scrapers/basket.json` (fuera de git), nunca en el código.
 - Toda Server Action que ESCRIBA datos llama a `requireUser()` de `lib/auth.ts` como primera línea, sin excepción. Las lecturas no lo necesitan: RLS ya las cubre. El control estaba copiado a mano en cada acción hasta que se olvidó en /semana (2026-08-19); un solo sitio y una regla escrita es lo que impide que se repita.
 - Los `nutrition_targets` se fechan en lunes. `create_meal_plan` los resuelve contra `week_start`, que siempre es lunes, así que un objetivo fechado a media semana no aplica hasta el lunes siguiente.
-- Todas las fechas del dominio son fechas civiles de Europe/Madrid, no UTC, **tanto en TypeScript como en SQL**. Ni Vercel ni Supabase corren en Madrid: los dos usan UTC de servidor, y en la franja de 00:00 a 02:00 de Madrid dan el día anterior en silencio, sin fallar de forma ruidosa — es el mismo bug a los dos lados. En TypeScript, usa `todayInMadrid()` de `lib/dates.ts`, el único sitio donde se fija esa zona horaria; nunca derives una fecha de dominio de `new Date()` a secas en el servidor. En SQL, nunca uses `current_date` ni `now()::date` para una fecha de dominio: usa `(now() at time zone 'Europe/Madrid')::date`. Los `timestamptz` de auditoría (`created_at`) SÍ se quedan en UTC — es lo correcto para ellos, no los "arregles".
+- Todas las fechas del dominio son fechas civiles de la zona horaria de la app (`APP_TIMEZONE`, por defecto Europe/Madrid), no UTC, **tanto en TypeScript como en SQL**. Ni Vercel ni Supabase corren en Madrid: los dos usan UTC de servidor, y en la franja de 00:00 a 02:00 de Madrid dan el día anterior en silencio, sin fallar de forma ruidosa — es el mismo bug a los dos lados. En TypeScript, usa `todayInAppTimezone()` de `lib/dates.ts` (`todayInMadrid()` es un alias antiguo), el único sitio donde se fija esa zona horaria; nunca derives una fecha de dominio de `new Date()` a secas en el servidor. En SQL, nunca uses `current_date` ni `now()::date` para una fecha de dominio: usa `(now() at time zone '<tu zona>')::date` (`Europe/Madrid` por defecto). Los `timestamptz` de auditoría (`created_at`) SÍ se quedan en UTC — es lo correcto para ellos, no los "arregles".
 
 ## Estado actual
 
