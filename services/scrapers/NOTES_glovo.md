@@ -45,3 +45,48 @@ Ninguna de las tres está construida. Candidatas para cuando se
 retome el trabajo de canales — después del frontend y de la despensa,
 salvo que se decida que la comparación de canales necesita ser fiable
 antes.
+
+## Corrección: el recargo de producto de Glovo NO es cero (2026-09-08)
+
+`load_glovo_channel.py` (docstring) y una nota anterior afirmaban que
+el recargo de producto de Glovo frente a Dia era "esencialmente cero"
+(~0.4% ponderado, medido como 27.85 € vs 27.73 € sobre la cesta real
+del 2026-08-27). **Es falso**, y el motivo es un dato promocional
+metido en la media sin detectarlo: aquella muestra incluía "Patatas 4
+Kg" a 3.49 € en Glovo contra 4.99 € en Dia (-30 %) -- una promoción
+puntual de ese día, no el precio estructural. Sondeado de nuevo el
+2026-09-08 20:33 (tienda abierta, catálogo completo, sin promociones
+detectadas), el mismo producto vale 4.99 € en los dos canales.
+
+**El recargo real de producto de Glovo ronda el 10-15 %**, medido
+sobre 8 productos de la cesta ese día:
+
+```
+Producto                                  Dia web   Glovo    desvío
+Patatas 4 Kg                               4.99      4.99      0 %
+Huevos grandes L 12 uds                    3.05      3.20     +4.9 %
+Maxi pavo Dia Nuestra Alacena 900 g        3.19      3.45     +8.2 %
+Queso fresco batido Granja Rinya 400 g     1.89      2.09    +10.6 %
+Filetes merluza Argentina sin piel 400 g   3.49      3.89    +11.5 %
+Escalopín de lomo marinado 600 g           3.99      4.49    +12.5 %
+Champiñones laminados Vegecampo 185 g      1.00      1.15    +15.0 %
+Mezcla de pimientos Vegecampo 400 g        1.07      1.35    +26.2 %
+```
+
+**Aprendizaje, mismo error que ya se evita en los datos
+nutricionales:** un precio observado una sola vez puede ser
+promocional, no estructural -- meterlo en una media sin más lo
+disfraza de dato normal. `product_prices.observed_at` existe
+precisamente para poder detectar esto comparando observaciones en el
+tiempo, no solo para "saber cuándo se midió".
+
+**Dos productos de la cesta no existen en Glovo con el mismo SKU**
+(confirma el punto (a) de arriba -- el catálogo de Glovo es un
+subconjunto distinto, el ganador debería resolverse por canal):
+
+- "Pechuga de pollo entera formato familiar 1.3 Kg" (Dia) -- en
+  Glovo solo está "Pechugas Enteras De Pollo Selección De Dia 720 g
+  Aprox." a 4.89 € (6.79 €/kg vs 6.49 €/kg en Dia).
+- "Plátano de canarias 1 Kg aprox." a 1.50 € (Dia) -- en Glovo solo
+  hay "Plátano Bio 1 Kg" a 2.99 €, el doble (producto distinto, no
+  el mismo plátano más caro).

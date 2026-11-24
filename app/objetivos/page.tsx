@@ -1,6 +1,29 @@
+import { Target } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { todayInMadrid } from "@/lib/dates";
+import {
+  Alert,
+  DataTable,
+  Empty,
+  Field,
+  Page,
+  PageHeader,
+  Panel,
+  Stat,
+  btnPrimary,
+  inputClass,
+} from "@/components/kit";
+import { longDay, num, shortDate } from "@/lib/format";
 import { setTarget } from "./actions";
+
+export const metadata = { title: "Objetivos" };
+
+const MACRO_FIELDS = [
+  { name: "kcal", label: "kcal" },
+  { name: "protein_g", label: "Proteína (g)" },
+  { name: "fat_g", label: "Grasa (g)" },
+  { name: "carbs_g", label: "Carbohidratos (g)" },
+] as const;
 
 export default async function ObjetivosPage({
   searchParams,
@@ -19,179 +42,102 @@ export default async function ObjetivosPage({
   const today = todayInMadrid();
 
   return (
-    <main className="mx-auto max-w-2xl space-y-10 p-6">
-      <section>
-        <h1 className="mb-4 text-xl font-semibold">Objetivo vigente</h1>
+    <Page>
+      <PageHeader eyebrow="Nutrición" title="Objetivos" />
 
-        {loadError ? (
-          <p className="text-sm text-red-600">{loadError.message}</p>
-        ) : current ? (
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
-            <div>
-              <dt className="text-gray-500">Desde</dt>
-              <dd>{current.effective_from}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">kcal</dt>
-              <dd>{current.kcal}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Proteína</dt>
-              <dd>{current.protein_g} g</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Grasa</dt>
-              <dd>{current.fat_g} g</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Carbohidratos</dt>
-              <dd>{current.carbs_g} g</dd>
-            </div>
-            {current.notes ? (
-              <div className="col-span-full">
-                <dt className="text-gray-500">Notas</dt>
-                <dd>{current.notes}</dd>
+      {loadError ? <Alert>{loadError.message}</Alert> : null}
+
+      <section className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+        <div className="glow-lime rounded-3xl bg-card p-7">
+          <p className="eyebrow">Objetivo más reciente</p>
+          {current ? (
+            <>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Desde el {longDay(current.effective_from)}
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-4">
+                <Stat label="Proteína" value={num(current.protein_g)} unit="g" tone="lime" />
+                <Stat label="Energía" value={num(current.kcal)} unit="kcal" tone="blaze" />
+                <Stat label="Carbos" value={num(current.carbs_g)} unit="g" />
+                <Stat label="Grasa" value={num(current.fat_g)} unit="g" />
               </div>
-            ) : null}
-          </dl>
-        ) : (
-          <p className="text-sm text-gray-500">Todavía no hay ningún objetivo fijado.</p>
-        )}
-      </section>
+              {current.notes ? (
+                <p className="mt-6 rounded-2xl bg-background px-4 py-3 text-sm text-muted-foreground">
+                  {current.notes}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-3 text-muted-foreground">
+              Todavía no hay ningún objetivo fijado.
+            </p>
+          )}
+          <p className="mt-6 text-xs text-muted-foreground">
+            Los objetivos se aplican por semanas: un plan usa el último objetivo
+            fechado en o antes de su lunes.
+          </p>
+        </div>
 
-      <section>
-        <h2 className="mb-4 text-lg font-semibold">Fijar nuevo objetivo</h2>
-
-        {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
-
-        <form action={setTarget} className="space-y-4">
-          <div className="space-y-1">
-            <label htmlFor="effective_from" className="block text-sm font-medium">
-              Vigente desde
-            </label>
-            <input
-              id="effective_from"
-              name="effective_from"
-              type="date"
-              defaultValue={today}
-              required
-              className="w-full rounded border px-3 py-2"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label htmlFor="kcal" className="block text-sm font-medium">
-                kcal
-              </label>
-              <input
-                id="kcal"
-                name="kcal"
-                type="number"
-                step="1"
-                min="1"
-                required
-                className="w-full rounded border px-3 py-2"
-              />
+        <Panel title="Fijar nuevo objetivo">
+          {error ? (
+            <div className="mb-4">
+              <Alert>{error}</Alert>
             </div>
-
-            <div className="space-y-1">
-              <label htmlFor="protein_g" className="block text-sm font-medium">
-                Proteína (g)
-              </label>
+          ) : null}
+          <form action={setTarget} className="space-y-4">
+            <Field label="Vigente desde" htmlFor="effective_from">
               <input
-                id="protein_g"
-                name="protein_g"
-                type="number"
-                step="1"
-                min="1"
+                id="effective_from"
+                name="effective_from"
+                type="date"
+                defaultValue={today}
                 required
-                className="w-full rounded border px-3 py-2"
+                className={inputClass}
               />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor="fat_g" className="block text-sm font-medium">
-                Grasa (g)
-              </label>
-              <input
-                id="fat_g"
-                name="fat_g"
-                type="number"
-                step="1"
-                min="1"
-                required
-                className="w-full rounded border px-3 py-2"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor="carbs_g" className="block text-sm font-medium">
-                Carbohidratos (g)
-              </label>
-              <input
-                id="carbs_g"
-                name="carbs_g"
-                type="number"
-                step="1"
-                min="1"
-                required
-                className="w-full rounded border px-3 py-2"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label htmlFor="notes" className="block text-sm font-medium">
-              Notas (opcional)
-            </label>
-            <textarea
-              id="notes"
-              name="notes"
-              rows={2}
-              className="w-full rounded border px-3 py-2"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="rounded bg-black px-4 py-2 text-white"
-          >
-            Guardar
-          </button>
-        </form>
-      </section>
-
-      <section>
-        <h2 className="mb-4 text-lg font-semibold">Histórico</h2>
-
-        {targets && targets.length > 0 ? (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="py-2">Desde</th>
-                <th className="py-2">kcal</th>
-                <th className="py-2">Proteína</th>
-                <th className="py-2">Grasa</th>
-                <th className="py-2">Carbohidratos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {targets.map((target) => (
-                <tr key={target.id} className="border-b">
-                  <td className="py-2">{target.effective_from}</td>
-                  <td className="py-2">{target.kcal}</td>
-                  <td className="py-2">{target.protein_g} g</td>
-                  <td className="py-2">{target.fat_g} g</td>
-                  <td className="py-2">{target.carbs_g} g</td>
-                </tr>
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              {MACRO_FIELDS.map((f) => (
+                <Field key={f.name} label={f.label} htmlFor={f.name}>
+                  <input
+                    id={f.name}
+                    name={f.name}
+                    type="number"
+                    step="1"
+                    min="1"
+                    required
+                    placeholder={current ? String(current[f.name]) : undefined}
+                    className={inputClass}
+                  />
+                </Field>
               ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="text-sm text-gray-500">Sin histórico todavía.</p>
-        )}
+            </div>
+            <Field label="Notas (opcional)" htmlFor="notes">
+              <textarea id="notes" name="notes" rows={2} className={inputClass} />
+            </Field>
+            <button type="submit" className={`${btnPrimary} w-full`}>
+              <Target className="size-4" /> Guardar objetivo
+            </button>
+          </form>
+        </Panel>
       </section>
-    </main>
+
+      <Panel title="Histórico">
+        {targets && targets.length > 0 ? (
+          <DataTable head={["Desde", "Proteína", "kcal", "Carbos", "Grasa"]}>
+            {targets.map((t) => (
+              <tr key={t.id}>
+                <td>{shortDate(t.effective_from)}</td>
+                <td className="text-lime">{num(t.protein_g)} g</td>
+                <td>{num(t.kcal)}</td>
+                <td>{num(t.carbs_g)} g</td>
+                <td>{num(t.fat_g)} g</td>
+              </tr>
+            ))}
+          </DataTable>
+        ) : (
+          <Empty>Sin histórico todavía.</Empty>
+        )}
+      </Panel>
+    </Page>
   );
 }

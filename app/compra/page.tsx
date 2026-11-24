@@ -1,6 +1,10 @@
+import Link from "next/link";
+import { ArrowRight, ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { todayInMadrid, addDays, mondayOf } from "@/lib/dates";
 import { WeekNav } from "@/components/WeekNav";
+import { Page, btnPrimary } from "@/components/kit";
+import { shortDate } from "@/lib/format";
 import { resolveDefaultWeekStart } from "@/lib/weekPlan";
 import { ShoppingBoard, type ShoppingItem, type PendingItem, type CookRow } from "./ShoppingBoard";
 
@@ -98,16 +102,24 @@ export default async function CompraPage({
 
   if (!plan) {
     return (
-      <main className="mx-auto max-w-5xl space-y-4 p-6">
+      <Page>
         {nav}
-        <p className="text-sm text-muted-foreground">
-          Todavía no hay plan para la semana del {weekStart}.{" "}
-          <a href={`/semana?week=${weekStart}`} className="underline">
-            Ir a /semana para crearlo
-          </a>
-          .
-        </p>
-      </main>
+        <div className="flex flex-col items-start gap-4 rounded-3xl bg-card p-8">
+          <ShoppingCart className="size-10 text-lime" strokeWidth={1.5} />
+          <div>
+            <h2 className="font-display text-2xl font-bold">
+              Sin plan, no hay lista.
+            </h2>
+            <p className="mt-1 text-muted-foreground">
+              La lista de la compra sale del plan de la semana del{" "}
+              {shortDate(weekStart)}.
+            </p>
+          </div>
+          <Link href={`/semana?week=${weekStart}`} className={btnPrimary}>
+            Crear el plan <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      </Page>
     );
   }
 
@@ -134,9 +146,15 @@ export default async function CompraPage({
       .eq("plan_id", plan.id)
       .maybeSingle(),
     supabase.from("channels").select("id, store, channel"),
+    // Acotado al canal presencial: desde 20260912000000 la vista da
+    // una fila por (food, canal), y shopping_list ya se acota igual
+    // -- sin este filtro un food con precio tambien en Glovo daria 2
+    // filas aqui y el Map de mas abajo se quedaria con la que llegue
+    // ultima, al azar.
     supabase
       .from("cheapest_dia_proposal")
       .select("food_id, food_name, product_name, sin_criterio_comparacion, motivos, image_path")
+      .eq("channel_id", "a1dbf77b-785a-407c-bbe8-e6fce579ee99")
       .returns<ProposalRow[]>(),
     supabase
       .from("shopping_check")
@@ -256,12 +274,18 @@ export default async function CompraPage({
       : { data: null };
 
   return (
-    <main className="mx-auto max-w-5xl space-y-4 p-6">
+    <Page>
       {nav}
-      <p className="text-sm text-muted-foreground">
-        {items.length + pending.length} productos · cocinas el domingo{" "}
-        {addDays(weekStart, -1)}
-      </p>
+      <div className="flex flex-wrap gap-3">
+        <span className="rounded-full bg-card px-4 py-2 font-display text-sm">
+          <span className="text-lime">{items.length + pending.length}</span>{" "}
+          <span className="text-muted-foreground">productos</span>
+        </span>
+        <span className="rounded-full bg-card px-4 py-2 font-display text-sm">
+          <span className="text-muted-foreground">Cocinas el </span>
+          domingo {shortDate(addDays(weekStart, -1))}
+        </span>
+      </div>
 
       <ShoppingBoard
         planId={plan.id}
@@ -277,12 +301,12 @@ export default async function CompraPage({
         }}
       />
 
-      <p className="border-t pt-4 text-xs text-muted-foreground">
+      <p className="px-1 text-xs leading-relaxed text-muted-foreground">
         Glovo se paga con saldo Cobee, dinero bruto sin tributar. El
         equivalente bruto es lo que costaría en sueldo bruto conseguir el
         importe neto de la tienda, asumiendo un tipo marginal de IRPF del
         30 % (estimación, no un dato fiscal verificado).
       </p>
-    </main>
+    </Page>
   );
 }

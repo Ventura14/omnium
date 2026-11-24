@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { Page, PageHeader, btnGhost } from "@/components/kit";
 import RecipeForm from "../RecipeForm";
 
 export default async function EditarRecetaPage({
@@ -36,8 +39,11 @@ export default async function EditarRecetaPage({
   }));
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
-      <h1 className="mb-6 text-xl font-semibold">{recipe.name}</h1>
+    <Page>
+      <Link href="/recetas" className={btnGhost}>
+        <ArrowLeft className="size-4" /> Recetas
+      </Link>
+      <PageHeader eyebrow="Editar receta" title={recipe.name} />
       <RecipeForm
         initialRecipe={{
           id: recipe.id,
@@ -51,6 +57,6 @@ export default async function EditarRecetaPage({
           ingredients,
         }}
       />
-    </main>
+    </Page>
   );
 }

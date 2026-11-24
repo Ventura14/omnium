@@ -1,142 +1,147 @@
+import Link from "next/link";
+import { Plus, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import {
+  Alert,
+  DataTable,
+  Empty,
+  Field,
+  Page,
+  PageHeader,
+  Panel,
+  btnPrimary,
+  btnSecondary,
+  inputClass,
+} from "@/components/kit";
+import { decimal, num } from "@/lib/format";
 import { addFood } from "./actions";
+
+export const metadata = { title: "Alimentos" };
+
+const MACRO_FIELDS = [
+  { name: "kcal_100g", label: "kcal / 100 g" },
+  { name: "protein_100g", label: "Proteína / 100 g" },
+  { name: "carbs_100g", label: "Carbohidratos / 100 g" },
+  { name: "fat_100g", label: "Grasa / 100 g" },
+] as const;
+
+type FoodRow = {
+  id: string;
+  name: string;
+  kcal_100g: number | null;
+  protein_100g: number | null;
+  carbs_100g: number | null;
+  fat_100g: number | null;
+};
 
 export default async function FoodsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; q?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, q } = await searchParams;
+  const query = q?.trim() ?? "";
   const supabase = await createClient();
 
-  const { data: foods, error: loadError } = await supabase
-    .from("foods")
-    .select("id, name, kcal_100g, protein_100g")
-    .order("name");
+  // Con texto, la busqueda la hace search_foods en Postgres (sin
+  // acentos, mismo criterio que el buscador de recetas). Sin texto,
+  // la lista completa por nombre.
+  const { data: foods, error: loadError } = query
+    ? await supabase.rpc("search_foods", { query }).returns<FoodRow[]>()
+    : await supabase
+        .from("foods")
+        .select("id, name, kcal_100g, protein_100g, carbs_100g, fat_100g")
+        .order("name")
+        .returns<FoodRow[]>();
 
   return (
-    <main className="mx-auto max-w-2xl space-y-10 p-6">
-      <section>
-        <h1 className="mb-4 text-xl font-semibold">Alimentos</h1>
+    <Page>
+      <PageHeader eyebrow={`${foods?.length ?? 0} alimentos`} title="Alimentos" />
 
-        {loadError ? (
-          <p className="text-sm text-red-600">{loadError.message}</p>
-        ) : foods && foods.length > 0 ? (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="py-2">Nombre</th>
-                <th className="py-2">kcal / 100g</th>
-                <th className="py-2">Proteína / 100g</th>
-              </tr>
-            </thead>
-            <tbody>
+      <section className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+        <Panel>
+          <form className="mb-5 flex gap-2" role="search">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                name="q"
+                defaultValue={query}
+                placeholder="Buscar: pollo, arroz, lenteja…"
+                aria-label="Buscar alimento"
+                className={`${inputClass} pl-11`}
+              />
+            </div>
+            <button type="submit" className={btnSecondary}>
+              Buscar
+            </button>
+            {query ? (
+              <Link href="/foods" className={btnSecondary}>
+                Limpiar
+              </Link>
+            ) : null}
+          </form>
+
+          {loadError ? (
+            <Alert>{loadError.message}</Alert>
+          ) : foods && foods.length > 0 ? (
+            <DataTable head={["Nombre", "kcal", "Prot.", "HC", "Grasa"]}>
               {foods.map((food) => (
-                <tr key={food.id} className="border-b">
-                  <td className="py-2">{food.name}</td>
-                  <td className="py-2">{food.kcal_100g}</td>
-                  <td className="py-2">{food.protein_100g} g</td>
+                <tr key={food.id}>
+                  <td className="max-w-xs">{food.name}</td>
+                  <td>{num(food.kcal_100g)}</td>
+                  <td className="text-lime">{decimal(food.protein_100g)}</td>
+                  <td>{decimal(food.carbs_100g)}</td>
+                  <td>{decimal(food.fat_100g)}</td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="text-sm text-gray-500">Todavía no hay alimentos.</p>
-        )}
+            </DataTable>
+          ) : (
+            <Empty>
+              {query ? `Nada coincide con “${query}”.` : "Todavía no hay alimentos."}
+            </Empty>
+          )}
+          <p className="mt-4 text-xs text-muted-foreground">
+            Valores por 100 g de alimento crudo o seco.
+          </p>
+        </Panel>
+
+        <div className="lg:sticky lg:top-5 lg:self-start">
+          <Panel title="Añadir alimento">
+            {error ? (
+              <div className="mb-4">
+                <Alert>{error}</Alert>
+              </div>
+            ) : null}
+            <form action={addFood} className="space-y-4">
+              <Field label="Nombre" htmlFor="name">
+                <input id="name" name="name" type="text" required className={inputClass} />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                {MACRO_FIELDS.map((f) => (
+                  <Field key={f.name} label={f.label} htmlFor={f.name}>
+                    <input
+                      id={f.name}
+                      name={f.name}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      className={inputClass}
+                    />
+                  </Field>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Siempre en crudo o seco y por 100 g, copiado de la etiqueta o de
+                BEDCA. Nunca valores inventados.
+              </p>
+              <button type="submit" className={`${btnPrimary} w-full`}>
+                <Plus className="size-4" /> Añadir
+              </button>
+            </form>
+          </Panel>
+        </div>
       </section>
-
-      <section>
-        <h2 className="mb-4 text-lg font-semibold">Añadir alimento</h2>
-
-        {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
-
-        <form action={addFood} className="space-y-4">
-          <div className="space-y-1">
-            <label htmlFor="name" className="block text-sm font-medium">
-              Nombre
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              className="w-full rounded border px-3 py-2"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label htmlFor="kcal_100g" className="block text-sm font-medium">
-                kcal / 100g
-              </label>
-              <input
-                id="kcal_100g"
-                name="kcal_100g"
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                className="w-full rounded border px-3 py-2"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label
-                htmlFor="protein_100g"
-                className="block text-sm font-medium"
-              >
-                Proteína / 100g
-              </label>
-              <input
-                id="protein_100g"
-                name="protein_100g"
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                className="w-full rounded border px-3 py-2"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor="carbs_100g" className="block text-sm font-medium">
-                Carbohidratos / 100g
-              </label>
-              <input
-                id="carbs_100g"
-                name="carbs_100g"
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                className="w-full rounded border px-3 py-2"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor="fat_100g" className="block text-sm font-medium">
-                Grasa / 100g
-              </label>
-              <input
-                id="fat_100g"
-                name="fat_100g"
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                className="w-full rounded border px-3 py-2"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="rounded bg-black px-4 py-2 text-white"
-          >
-            Añadir
-          </button>
-        </form>
-      </section>
-    </main>
+    </Page>
   );
 }

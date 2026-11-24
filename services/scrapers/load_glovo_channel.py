@@ -11,10 +11,16 @@ tarifas" de Glovo:
   Logistica:      0.34 EUR suelo, 4.9% del pedido, 2.10 EUR techo
   Pedido pequeño: 1.99 EUR fijo si el pedido es inferior a 22.00 EUR
 
-El markup de PRODUCTO (precio Dia vs precio en Glovo) medido en la
-misma sonda es practicamente cero (~0.4% ponderado por la cesta real)
--- por eso channels.markup_pct se deja en null aqui, el coste real de
-Glovo esta en channel_fees, no en un recargo de producto.
+channels.markup_pct se deja en null aqui a proposito: el markup de
+PRODUCTO (precio Dia vs precio en Glovo) varia por producto (10-15%
+medido el 2026-09-08 sobre 8 productos reales, ver NOTES_glovo.md) --
+un escalar unico resumiendo esa variacion seria el mismo tipo de
+numero inventado que este proyecto evita en otros sitios. El precio
+real de cada producto en Glovo vive en product_prices (channel_id =
+canal Glovo), no en un porcentaje aplicado sobre el precio de Dia.
+NOTA: la primera medicion (2026-08-27) decia "practicamente cero" --
+era un dato promocional (Patatas 4 Kg con descuento puntual) metido
+en la media sin detectarlo. Corregido, ver NOTES_glovo.md.
 
 NO idempotente a proposito (regla 6, un usuario, ejecucion puntual):
 ejecutarlo dos veces duplica las filas de channel_fees.

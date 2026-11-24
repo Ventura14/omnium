@@ -33,11 +33,17 @@ export async function searchFoods(query: string): Promise<FoodSearchResult[]> {
   return data;
 }
 
+// Los 4 totales pueden salir NULL: si algun ingrediente todavia no
+// tiene macros (etiqueta pendiente, regla 15), Postgres devuelve
+// NULL en vez de un numero que calla lo que falta -- ver
+// 20260914000000_foods_nullable_macros.sql. missing_macro_foods trae
+// los nombres para poder decir el porque, no solo "sin datos".
 export type DraftMacros = {
-  kcal_per_serving: number;
-  protein_per_serving: number;
-  carbs_per_serving: number;
-  fat_per_serving: number;
+  kcal_per_serving: number | null;
+  protein_per_serving: number | null;
+  carbs_per_serving: number | null;
+  fat_per_serving: number | null;
+  missing_macro_foods: string[] | null;
 };
 
 // Macros por racion "al vuelo" mientras se edita, antes de guardar

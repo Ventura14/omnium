@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formatWeekRange } from "@/lib/dates";
 
 // Cabecera de navegacion de semana, compartida por /semana y /compra
@@ -20,32 +22,37 @@ export function WeekNav({
   nextWeek: string;
 }) {
   return (
-    <div className="flex items-center justify-between">
-      <h1 className="text-xl font-semibold">{title}</h1>
-      <div className="flex items-center gap-2 text-sm">
-        <a
+    <header className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <h1 className="font-display text-2xl leading-tight font-bold md:text-3xl">
+          {title}
+        </h1>
+        <p className="eyebrow">{formatWeekRange(weekStart)}</p>
+      </div>
+      <div className="flex items-center gap-1 rounded-full bg-card p-1">
+        <Link
           href={`${basePath}?week=${prevWeek}`}
           aria-label="Semana anterior"
-          className="px-1 text-lg text-muted-foreground hover:text-foreground"
+          className="grid size-9 place-items-center rounded-full text-muted-foreground transition hover:bg-track hover:text-foreground"
         >
-          ‹
-        </a>
-        <span className="text-muted-foreground">
-          {formatWeekRange(weekStart)}
-        </span>
-        <a
+          <ChevronLeft className="size-4" />
+        </Link>
+        {weekStart !== defaultWeekStart ? (
+          <Link
+            href={basePath}
+            className="rounded-full px-3 py-1.5 font-display text-xs text-lime transition hover:bg-track"
+          >
+            Volver al plan actual
+          </Link>
+        ) : null}
+        <Link
           href={`${basePath}?week=${nextWeek}`}
           aria-label="Semana siguiente"
-          className="px-1 text-lg text-muted-foreground hover:text-foreground"
+          className="grid size-9 place-items-center rounded-full text-muted-foreground transition hover:bg-track hover:text-foreground"
         >
-          ›
-        </a>
-        {weekStart !== defaultWeekStart ? (
-          <a href={basePath} className="ml-1 text-xs underline">
-            esta semana
-          </a>
-        ) : null}
+          <ChevronRight className="size-4" />
+        </Link>
       </div>
-    </div>
+    </header>
   );
 }

@@ -249,7 +249,7 @@ export type Database = {
       }
       foods: {
         Row: {
-          carbs_100g: number
+          carbs_100g: number | null
           carbs_convention: string
           carbs_convention_source: string
           carbs_total_100g: number | null
@@ -258,15 +258,15 @@ export type Database = {
           created_by: string | null
           display_name: string | null
           embedding: string | null
-          fat_100g: number
+          fat_100g: number | null
           fiber_100g: number | null
           id: string
           is_excluded: boolean
           is_staple: boolean
-          kcal_100g: number
+          kcal_100g: number | null
           macros_source_note: string | null
           name: string
-          protein_100g: number
+          protein_100g: number | null
           search_name: string
           source: Database["public"]["Enums"]["food_source"]
           source_detail: string | null
@@ -274,7 +274,7 @@ export type Database = {
           store_zone: string | null
         }
         Insert: {
-          carbs_100g: number
+          carbs_100g?: number | null
           carbs_convention?: string
           carbs_convention_source?: string
           carbs_total_100g?: number | null
@@ -283,15 +283,15 @@ export type Database = {
           created_by?: string | null
           display_name?: string | null
           embedding?: string | null
-          fat_100g: number
+          fat_100g?: number | null
           fiber_100g?: number | null
           id?: string
           is_excluded?: boolean
           is_staple?: boolean
-          kcal_100g: number
+          kcal_100g?: number | null
           macros_source_note?: string | null
           name: string
-          protein_100g: number
+          protein_100g?: number | null
           search_name: string
           source?: Database["public"]["Enums"]["food_source"]
           source_detail?: string | null
@@ -299,7 +299,7 @@ export type Database = {
           store_zone?: string | null
         }
         Update: {
-          carbs_100g?: number
+          carbs_100g?: number | null
           carbs_convention?: string
           carbs_convention_source?: string
           carbs_total_100g?: number | null
@@ -308,15 +308,15 @@ export type Database = {
           created_by?: string | null
           display_name?: string | null
           embedding?: string | null
-          fat_100g?: number
+          fat_100g?: number | null
           fiber_100g?: number | null
           id?: string
           is_excluded?: boolean
           is_staple?: boolean
-          kcal_100g?: number
+          kcal_100g?: number | null
           macros_source_note?: string | null
           name?: string
-          protein_100g?: number
+          protein_100g?: number | null
           search_name?: string
           source?: Database["public"]["Enums"]["food_source"]
           source_detail?: string | null
@@ -583,6 +583,50 @@ export type Database = {
           },
           {
             foreignKeyName: "product_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_weight_observations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          observed_g: number
+          observed_on: string
+          priced_by_weight: boolean
+          product_id: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          observed_g: number
+          observed_on: string
+          priced_by_weight: boolean
+          product_id: string
+          source: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          observed_g?: number
+          observed_on?: string
+          priced_by_weight?: boolean
+          product_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_weight_observations_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -959,6 +1003,7 @@ export type Database = {
     Views: {
       cheapest_dia_proposal: {
         Row: {
+          channel_id: string | null
           chosen_by_user: boolean | null
           edible_fraction: number | null
           effective_price_per_kg: number | null
@@ -1097,6 +1142,7 @@ export type Database = {
           protein: number | null
           protein_gap: number | null
           slot_date: string | null
+          slots_macro_incompletos: number | null
           slots_vacios: number | null
           target_kcal: number | null
           target_protein: number | null
@@ -1190,6 +1236,7 @@ export type Database = {
           fat_total: number | null
           kcal_per_serving: number | null
           kcal_total: number | null
+          missing_macro_foods: string[] | null
           protein_per_serving: number | null
           protein_total: number | null
           recipe_id: string | null
@@ -1234,6 +1281,7 @@ export type Database = {
           carbs_per_serving: number
           fat_per_serving: number
           kcal_per_serving: number
+          missing_macro_foods: string[]
           protein_per_serving: number
         }[]
       }

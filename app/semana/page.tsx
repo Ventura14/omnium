@@ -1,8 +1,12 @@
+import { ArrowRight, CalendarPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { todayInMadrid, addDays, mondayOf } from "@/lib/dates";
 import { WeekNav } from "@/components/WeekNav";
+import { Alert, Page, btnPrimary } from "@/components/kit";
 import { resolveDefaultWeekStart } from "@/lib/weekPlan";
-import { createPlan, assignSlot, copyPreviousDay } from "./actions";
+import { createPlan } from "./actions";
+import type { RecipeOption } from "./SlotCell";
+import { WeekPlanner, type PlannerDay } from "./WeekPlanner";
 
 // Ninguna cuenta de macros vive aqui. Esta pagina solo pinta lo que
 // devuelven create_meal_plan, recipe_fit y plan_day_totals -- toda la
@@ -47,13 +51,19 @@ type SlotRow = {
 type RecipeFitRow = {
   recipe_id: string;
   name: string;
-  protein_per_100kcal: number;
+  protein_per_100kcal: number | null;
+  kcal_per_serving: number | null;
+  protein_per_serving: number | null;
+  carbs_per_serving: number | null;
+  fat_per_serving: number | null;
 };
 
 type DayTotalRow = {
   slot_date: string;
   kcal: number;
   protein: number;
+  carbs: number | null;
+  fat: number | null;
   target_kcal: number;
   target_protein: number;
   kcal_gap: number;
@@ -111,9 +121,21 @@ export default async function SemanaPage({
     .eq("week_start", weekStart)
     .maybeSingle();
 
+  // Grasa y carbohidratos objetivo: meal_plans solo guarda kcal y
+  // proteina; se toma el nutrition_target vigente con el mismo
+  // criterio que create_meal_plan (fechado en o antes del lunes).
+  const { data: target } = await supabase
+    .from("nutrition_targets")
+    .select("fat_g, carbs_g")
+    .lte("effective_from", weekStart)
+    .order("effective_from", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const slotsByDay = new Map<string, Partial<Record<Meal, SlotRow>>>();
   const dayTotalsByDate = new Map<string, DayTotalRow>();
-  const optionsByMeal = new Map<Meal, { id: string; name: string }[]>();
+  const optionsByMeal = new Map<Meal, RecipeOption[]>();
+  const recipeById = new Map<string, RecipeOption>();
 
   if (plan) {
     const [{ data: slots }, { data: fitRows }, { data: dayTotals }] =
@@ -132,13 +154,15 @@ export default async function SemanaPage({
         // recipe_fit (SQL), no se calcula ni se ordena en JS.
         supabase
           .from("recipe_fit")
-          .select("recipe_id, name, protein_per_100kcal")
+          .select(
+            "recipe_id, name, protein_per_100kcal, kcal_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving"
+          )
           .order("protein_per_100kcal", { ascending: false })
           .returns<RecipeFitRow[]>(),
         supabase
           .from("plan_day_totals")
           .select(
-            "slot_date, kcal, protein, target_kcal, target_protein, kcal_gap, protein_gap, meals_out, slots_vacios"
+            "slot_date, kcal, protein, carbs, fat, target_kcal, target_protein, kcal_gap, protein_gap, meals_out, slots_vacios"
           )
           .eq("plan_id", plan.id)
           .returns<DayTotalRow[]>(),
@@ -161,23 +185,103 @@ export default async function SemanaPage({
     // join manual de recipe_macros en /recetas), asi que se cruzan
     // aqui dos resultados ya calculados por Postgres, sin recalcular
     // ni reordenar nada nuevo.
+    for (const r of fitRows ?? []) {
+      recipeById.set(r.recipe_id, {
+        id: r.recipe_id,
+        name: r.name,
+        kcal: r.kcal_per_serving,
+        protein: r.protein_per_serving,
+        carbs: r.carbs_per_serving,
+        fat: r.fat_per_serving,
+        ppk: r.protein_per_100kcal,
+        variant: null,
+      });
+    }
     for (const meal of MEAL_ORDER) {
       const { data: allowed } = await supabase
         .from("recipes")
-        .select("id")
+        .select("id, variant")
         .contains("suits", [meal]);
       const allowedIds = new Set((allowed ?? []).map((r) => r.id));
+      for (const r of allowed ?? []) {
+        const option = recipeById.get(r.id);
+        if (option) option.variant = r.variant;
+      }
       optionsByMeal.set(
         meal,
         (fitRows ?? [])
           .filter((r) => allowedIds.has(r.recipe_id))
-          .map((r) => ({ id: r.recipe_id, name: r.name }))
+          .map((r) => recipeById.get(r.recipe_id)!)
       );
     }
   }
 
+  const today = todayInMadrid();
+
+  // Se pasa al cliente la semana ya resuelta: cada dia con sus huecos
+  // y los totales de plan_day_totals tal cual. onTarget compara dos
+  // gaps que ya vienen calculados por SQL.
+  const plannerDays: PlannerDay[] = weekDays.map((day, dayIndex) => {
+    const slotsOfDay = slotsByDay.get(day) ?? {};
+    const t = dayTotalsByDate.get(day);
+    const d = new Date(`${day}T00:00:00Z`);
+    return {
+      date: day,
+      weekdayShort: d
+        .toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })
+        .replace(".", ""),
+      dayNumber: d.getUTCDate(),
+      longLabel: formatDayLabel(day),
+      isToday: day === today,
+      copyFrom: dayIndex > 0 ? weekdayName(weekDays[dayIndex - 1]) : null,
+      totals: t
+        ? {
+            kcal: t.kcal,
+            protein: t.protein,
+            carbs: t.carbs,
+            fat: t.fat,
+            targetKcal: t.target_kcal,
+            targetProtein: t.target_protein,
+            targetCarbs: target?.carbs_g ?? null,
+            targetFat: target?.fat_g ?? null,
+            kcalGap: t.kcal_gap,
+            proteinGap: t.protein_gap,
+            onTarget:
+              t.kcal_gap >= 0 &&
+              t.protein_gap >= 0 &&
+              t.meals_out === 0 &&
+              t.slots_vacios === 0,
+            mealsOut: t.meals_out,
+            emptySlots: t.slots_vacios,
+          }
+        : null,
+      slots: MEAL_ORDER.flatMap((meal) => {
+        const slot = slotsOfDay[meal];
+        if (!slot) return [];
+        return [
+          {
+            key: `${slot.id}:${slot.recipe_id}:${slot.servings}:${slot.eating_out}`,
+            slotId: slot.id,
+            meal,
+            weekStart,
+            mealLabel: MEAL_LABELS[meal],
+            dayLabel: formatDayLabel(day),
+            recipe: slot.recipe_id
+              ? (recipeById.get(slot.recipe_id) ?? null)
+              : null,
+            servings: slot.servings,
+            eatingOut: slot.eating_out,
+            variantMismatch: slot.variant_mismatch,
+            recipeVariant: slot.recipe_variant,
+            options: optionsByMeal.get(meal) ?? [],
+          },
+        ];
+      }),
+    };
+  });
+
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-6">
+    <Page className="pb-6 lg:flex lg:flex-1 lg:flex-col">
       <WeekNav
         basePath="/semana"
         title="Semana"
@@ -187,184 +291,37 @@ export default async function SemanaPage({
         nextWeek={nextWeek}
       />
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <Alert>{error}</Alert> : null}
 
       {!plan ? (
-        <form action={createPlan} className="space-y-3">
+        <form
+          action={createPlan}
+          className="glow-lime flex flex-col items-start gap-5 rounded-3xl bg-card p-8"
+        >
           <input type="hidden" name="week_start" value={weekStart} />
-          <p className="text-sm text-gray-500">
-            Todavía no hay plan para la semana del {weekStart}.
-          </p>
-          <button
-            type="submit"
-            className="rounded bg-black px-4 py-2 text-sm text-white"
-          >
-            Crear plan
+          <CalendarPlus className="size-10 text-lime" strokeWidth={1.5} />
+          <div>
+            <h2 className="font-display text-2xl font-bold">
+              Esta semana está en blanco.
+            </h2>
+            <p className="mt-1 max-w-md text-muted-foreground">
+              Crea el plan y se generan los huecos de cada día con tu
+              objetivo vigente. Luego asignas recetas o copias de un día a
+              otro.
+            </p>
+          </div>
+          <button type="submit" className={btnPrimary}>
+            Crear plan <ArrowRight className="size-4" />
           </button>
         </form>
       ) : (
-        <div className="space-y-8">
-          <p className="text-sm text-gray-500">
-            Objetivo: {plan.target_kcal} kcal · {plan.target_protein} g
-            proteína
-          </p>
-
-          {weekDays.map((day, dayIndex) => {
-            const slotsOfDay = slotsByDay.get(day) ?? {};
-            const totals = dayTotalsByDate.get(day);
-
-            return (
-              <section key={day} className="space-y-3 border-t pt-4">
-                <div className="flex items-baseline justify-between">
-                  <div className="flex items-baseline gap-3">
-                    <h2 className="text-sm font-semibold capitalize">
-                      {formatDayLabel(day)}
-                    </h2>
-                    {dayIndex > 0 ? (
-                      <form action={copyPreviousDay}>
-                        <input type="hidden" name="plan_id" value={plan.id} />
-                        <input
-                          type="hidden"
-                          name="target_date"
-                          value={day}
-                        />
-                        <input
-                          type="hidden"
-                          name="week_start"
-                          value={weekStart}
-                        />
-                        <button
-                          type="submit"
-                          className="text-xs text-gray-500 underline"
-                          title="Sobrescribe los 4 huecos de este día"
-                        >
-                          copiar {weekdayName(weekDays[dayIndex - 1])}{" "}
-                          (sobrescribe)
-                        </button>
-                      </form>
-                    ) : null}
-                  </div>
-                  <DaySummary totals={totals} />
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {MEAL_ORDER.map((meal) => {
-                    const slot = slotsOfDay[meal];
-                    if (!slot) return null;
-                    return (
-                      <form
-                        key={slot.id}
-                        action={assignSlot}
-                        className="space-y-2 rounded border p-3 text-sm"
-                      >
-                        <input type="hidden" name="slot_id" value={slot.id} />
-                        <input
-                          type="hidden"
-                          name="week_start"
-                          value={weekStart}
-                        />
-                        <p className="font-medium text-gray-700">
-                          {MEAL_LABELS[meal]}
-                        </p>
-
-                        <select
-                          name="recipe_id"
-                          defaultValue={slot.recipe_id ?? ""}
-                          className="w-full rounded border px-2 py-1"
-                        >
-                          <option value="">— sin asignar —</option>
-                          {(optionsByMeal.get(meal) ?? []).map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name}
-                            </option>
-                          ))}
-                        </select>
-
-                        {slot.variant_mismatch ? (
-                          <p className="text-xs text-amber-600">
-                            ⚠ Es variante &quot;{slot.recipe_variant}&quot;,
-                            revisa si toca ese día.
-                          </p>
-                        ) : null}
-
-                        <div className="flex items-center gap-2">
-                          <label htmlFor={`servings-${slot.id}`}>
-                            Raciones
-                          </label>
-                          <input
-                            id={`servings-${slot.id}`}
-                            name="servings"
-                            type="number"
-                            step="0.5"
-                            min="0.5"
-                            defaultValue={slot.servings}
-                            className="w-16 rounded border px-2 py-1"
-                          />
-                        </div>
-
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            name="eating_out"
-                            defaultChecked={slot.eating_out}
-                          />
-                          Fuera de casa
-                        </label>
-
-                        <button
-                          type="submit"
-                          className="rounded bg-black px-3 py-1 text-xs text-white"
-                        >
-                          Guardar
-                        </button>
-                      </form>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
-        </div>
+        <WeekPlanner
+          days={plannerDays}
+          planId={plan.id}
+          weekStart={weekStart}
+          initialDate={weekDays.includes(today) ? today : weekStart}
+        />
       )}
-    </main>
-  );
-}
-
-// Un dia por debajo del objetivo puede deberse a tres causas
-// distintas -- huecos sin asignar, una comida fuera, o de verdad
-// faltan calorias -- y tienen que distinguirse de un vistazo. Mostrar
-// solo kcal_gap sin esto haria parecer roto un dia que esta bien.
-function DaySummary({ totals }: { totals: DayTotalRow | undefined }) {
-  if (!totals) {
-    return <span className="text-xs text-gray-400">—</span>;
-  }
-
-  const notes: string[] = [];
-  if (totals.meals_out > 0) {
-    notes.push(
-      `${totals.meals_out} comida${totals.meals_out > 1 ? "s" : ""} fuera`
-    );
-  }
-  if (totals.slots_vacios > 0) {
-    notes.push(
-      `${totals.slots_vacios} hueco${totals.slots_vacios > 1 ? "s" : ""} por asignar`
-    );
-  }
-
-  const isShort = totals.kcal_gap < 0 || totals.protein_gap < 0;
-  const hasCaveat = totals.meals_out > 0 || totals.slots_vacios > 0;
-
-  return (
-    <div className="text-right text-xs">
-      <p className={hasCaveat ? "text-gray-500" : isShort ? "text-amber-600" : "text-green-700"}>
-        {totals.kcal} kcal · {totals.protein} g prot
-        {!hasCaveat
-          ? ` (${totals.kcal_gap >= 0 ? "+" : ""}${totals.kcal_gap} kcal, ${totals.protein_gap >= 0 ? "+" : ""}${totals.protein_gap} g prot)`
-          : ""}
-      </p>
-      {notes.length > 0 ? (
-        <p className="text-gray-500">{notes.join(" · ")}</p>
-      ) : null}
-    </div>
+    </Page>
   );
 }

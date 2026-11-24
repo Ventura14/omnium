@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check, Loader2, Plus, Search, X } from "lucide-react";
+import {
+  Alert,
+  Empty,
+  Field,
+  Panel,
+  btnPrimary,
+  inputClass,
+} from "@/components/kit";
 import {
   computeDraftMacros,
   saveRecipe,
@@ -143,213 +152,241 @@ export default function RecipeForm({ initialRecipe }: RecipeFormProps) {
     router.push(`/recetas/${result.recipeId}`);
   }
 
+  const macroCells = [
+    { label: "Proteína", value: visibleDraftMacros?.protein_per_serving, unit: "g", tone: "text-lime" },
+    { label: "Energía", value: visibleDraftMacros?.kcal_per_serving, unit: "kcal", tone: "text-blaze" },
+    { label: "Carbohidratos", value: visibleDraftMacros?.carbs_per_serving, unit: "g", tone: "text-muted-foreground" },
+    { label: "Grasa", value: visibleDraftMacros?.fat_per_serving, unit: "g", tone: "text-muted-foreground" },
+  ];
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+    <form
+      onSubmit={handleSubmit}
+      className="grid gap-5 lg:grid-cols-[1fr_20rem]"
+    >
+      <div className="space-y-5">
+        {error ? <Alert>{error}</Alert> : null}
 
-      <section className="space-y-4">
-        <div className="space-y-1">
-          <label htmlFor="name" className="block text-sm font-medium">
-            Nombre
-          </label>
-          <input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
+        <Panel title="Datos">
+          <div className="space-y-4">
+            <Field label="Nombre" htmlFor="name">
+              <input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className={inputClass}
+              />
+            </Field>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <label htmlFor="servings" className="block text-sm font-medium">
-              Raciones
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Raciones" htmlFor="servings">
+                <input
+                  id="servings"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={servings}
+                  onChange={(e) => setServings(Number(e.target.value))}
+                  required
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Minutos" htmlFor="prep_minutes">
+                <input
+                  id="prep_minutes"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={prepMinutes}
+                  onChange={(e) => setPrepMinutes(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Días nevera" htmlFor="fridge_days">
+                <input
+                  id="fridge_days"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={fridgeDays}
+                  onChange={(e) => setFridgeDays(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Toggle
+                checked={batchFriendly}
+                onChange={setBatchFriendly}
+                label="Aguanta bien en tupper"
+              />
+              <Toggle
+                checked={freezerOk}
+                onChange={setFreezerOk}
+                label="Congela bien"
+              />
+            </div>
+
+            <Field label="Instrucciones (opcional)" htmlFor="instructions">
+              <textarea
+                id="instructions"
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                rows={3}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+        </Panel>
+
+        <Panel title={`Ingredientes · ${ingredients.length}`}>
+          <div className="relative">
+            <label htmlFor="food_search" className="sr-only">
+              Buscar alimento
             </label>
+            <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
-              id="servings"
-              type="number"
-              min="1"
-              step="1"
-              value={servings}
-              onChange={(e) => setServings(Number(e.target.value))}
-              required
-              className="w-full rounded border px-3 py-2"
+              id="food_search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar alimento: pollo, arroz, patata…"
+              autoComplete="off"
+              className={`${inputClass} pl-11`}
             />
+            {visibleSearchResults.length > 0 ? (
+              <ul className="absolute inset-x-0 top-full z-20 mt-2 max-h-72 overflow-y-auto rounded-2xl border bg-popover p-1.5 shadow-2xl">
+                {visibleSearchResults.map((food) => (
+                  <li key={food.id}>
+                    <button
+                      type="button"
+                      onClick={() => addIngredient(food)}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition hover:bg-track"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Plus className="size-3.5 text-lime" />
+                        {food.name}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {food.source_detail ?? "manual"} · {food.kcal_100g} kcal/100g
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="prep_minutes" className="block text-sm font-medium">
-              Minutos preparación
-            </label>
-            <input
-              id="prep_minutes"
-              type="number"
-              min="0"
-              step="1"
-              value={prepMinutes}
-              onChange={(e) => setPrepMinutes(e.target.value)}
-              className="w-full rounded border px-3 py-2"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label htmlFor="fridge_days" className="block text-sm font-medium">
-              Días en nevera
-            </label>
-            <input
-              id="fridge_days"
-              type="number"
-              min="0"
-              step="1"
-              value={fridgeDays}
-              onChange={(e) => setFridgeDays(e.target.value)}
-              className="w-full rounded border px-3 py-2"
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={batchFriendly}
-              onChange={(e) => setBatchFriendly(e.target.checked)}
-            />
-            Aguanta bien en tupper
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={freezerOk}
-              onChange={(e) => setFreezerOk(e.target.checked)}
-            />
-            Congela bien
-          </label>
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="instructions" className="block text-sm font-medium">
-            Instrucciones (opcional)
-          </label>
-          <textarea
-            id="instructions"
-            value={instructions}
-            onChange={(e) => setInstructions(e.target.value)}
-            rows={3}
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Ingredientes</h2>
-
-        <div className="relative space-y-1">
-          <label htmlFor="food_search" className="block text-sm font-medium">
-            Buscar alimento
-          </label>
-          <input
-            id="food_search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="pollo, arroz, tomate..."
-            className="w-full rounded border px-3 py-2"
-          />
-          {visibleSearchResults.length > 0 ? (
-            <ul className="max-h-64 overflow-y-auto rounded border">
-              {visibleSearchResults.map((food) => (
-                <li key={food.id}>
-                  <button
-                    type="button"
-                    onClick={() => addIngredient(food)}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-100"
-                  >
-                    <span>{food.name}</span>
-                    <span className="text-xs text-gray-500">
-                      {food.source_detail ?? "manual"} · {food.kcal_100g} kcal/100g
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-
-        {ingredients.length > 0 ? (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="py-2">Alimento</th>
-                <th className="py-2">Gramos</th>
-                <th className="py-2" />
-              </tr>
-            </thead>
-            <tbody>
+          {ingredients.length > 0 ? (
+            <ul className="mt-4 space-y-2">
               {ingredients.map((ing, index) => (
-                <tr key={`${ing.foodId}-${index}`} className="border-b">
-                  <td className="py-2">{ing.name}</td>
-                  <td className="py-2">
+                <li
+                  key={`${ing.foodId}-${index}`}
+                  className="flex items-center gap-3 rounded-2xl bg-background px-4 py-2.5"
+                >
+                  <span className="min-w-0 flex-1 truncate text-sm">{ing.name}</span>
+                  <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <input
                       type="number"
                       min="1"
                       step="1"
                       value={ing.grams}
                       onChange={(e) => updateGrams(index, Number(e.target.value))}
-                      className="w-24 rounded border px-2 py-1"
+                      aria-label={`Gramos de ${ing.name}`}
+                      className="w-20 rounded-lg border border-input bg-card px-2 py-1 text-right text-foreground tabular-nums outline-none focus-visible:border-lime"
                     />
-                  </td>
-                  <td className="py-2">
-                    <button
-                      type="button"
-                      onClick={() => removeIngredient(index)}
-                      className="text-sm text-red-600"
-                    >
-                      Quitar
-                    </button>
-                  </td>
-                </tr>
+                    g
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => removeIngredient(index)}
+                    aria-label={`Quitar ${ing.name}`}
+                    className="grid size-8 place-items-center rounded-full text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </li>
               ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="text-sm text-gray-500">Todavía no hay ingredientes.</p>
-        )}
-      </section>
+            </ul>
+          ) : (
+            <div className="mt-4">
+              <Empty>Todavía no hay ingredientes. Búscalos arriba, en crudo y en gramos.</Empty>
+            </div>
+          )}
+        </Panel>
+      </div>
 
-      <section>
-        <h2 className="mb-2 text-lg font-semibold">Macros por ración</h2>
-        {visibleDraftMacros ? (
-          <dl className="grid grid-cols-4 gap-4 text-sm">
-            <div>
-              <dt className="text-gray-500">kcal</dt>
-              <dd>{visibleDraftMacros.kcal_per_serving}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Proteína</dt>
-              <dd>{visibleDraftMacros.protein_per_serving} g</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Carbohidratos</dt>
-              <dd>{visibleDraftMacros.carbs_per_serving} g</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Grasa</dt>
-              <dd>{visibleDraftMacros.fat_per_serving} g</dd>
-            </div>
-          </dl>
-        ) : (
-          <p className="text-sm text-gray-500">Añade ingredientes para ver los macros.</p>
-        )}
-      </section>
+      <aside className="lg:sticky lg:top-5 lg:self-start">
+        <div className="glow-lime rounded-3xl bg-card p-6">
+          <p className="eyebrow">Macros por ración</p>
+          {visibleDraftMacros ? (
+            <>
+              <dl className="mt-4 grid grid-cols-2 gap-4">
+                {macroCells.map((c) => (
+                  <div key={c.label}>
+                    <dt className={`text-xs tracking-wider uppercase ${c.tone}`}>
+                      {c.label}
+                    </dt>
+                    <dd className="font-display text-2xl font-semibold tabular-nums">
+                      {c.value ?? "—"}
+                      {c.value != null ? (
+                        <span className="text-sm text-muted-foreground"> {c.unit}</span>
+                      ) : null}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              {visibleDraftMacros.missing_macro_foods ? (
+                <p className="mt-4 text-sm text-blaze">
+                  Faltan macros de: {visibleDraftMacros.missing_macro_foods.join(", ")}. Los
+                  totales no se pueden calcular hasta que tengan etiqueta.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Añade ingredientes para ver los macros.
+            </p>
+          )}
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
-      >
-        {saving ? "Guardando…" : "Guardar receta"}
-      </button>
+          <button type="submit" disabled={saving} className={`${btnPrimary} mt-6 w-full`}>
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Check className="size-4" />
+            )}
+            {saving ? "Guardando…" : "Guardar receta"}
+          </button>
+        </div>
+      </aside>
     </form>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
+  return (
+    <label
+      className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm transition select-none ${
+        checked ? "bg-lime text-primary-foreground" : "bg-track text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="sr-only"
+      />
+      {checked ? <Check className="size-3.5" /> : null}
+      {label}
+    </label>
   );
 }
