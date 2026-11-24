@@ -22,6 +22,12 @@ flowchart LR
   D --> E["💶 Tienda o reparto<br/>€ por g de proteína"]
 ```
 
+<p align="center">
+  <img src="docs/screenshots/hoy.png" alt="Pantalla Hoy de Omnium: macros del día, días en objetivo de la semana, coste, peso y comidas de hoy" width="900">
+  <br>
+  <sub>Pantalla <b>Hoy</b>. Todas las capturas usan los datos de ejemplo del repositorio (<code>supabase/seed/</code>), no datos reales.</sub>
+</p>
+
 ## Índice
 
 [Qué aporta](#qué-aporta) · [Pantallas](#pantallas) · [Arranque](#arranque-paso-a-paso) · [Configuración](#configuración) · [Hacerlo tuyo](#hacerlo-tuyo) · [Datos y licencia](#datos-de-terceros-y-licencia) · [Limitaciones](#limitaciones) · [Contribuir](#contribuir)
@@ -93,12 +99,28 @@ Si tienes saldo de una tarjeta de beneficios que solo sirve en reparto (tipo Cob
 
 | Pantalla | Para qué |
 |---|---|
-| `/foods` | Catálogo de alimentos con macros por 100 g y alta manual desde una etiqueta. |
-| `/recetas` | Recetas en gramos, con macros por ración calculados en Postgres. |
+| `/` **Hoy** | Resumen del día: macros frente a tu objetivo, días en objetivo de la semana, coste, peso y las comidas de hoy. |
 | `/semana` | Planificador: asigna recetas a huecos, ve los macros del día frente a tu objetivo. Variantes casa / oficina con aviso. |
 | `/compra` | Lista de la compra: envases, sobrantes, coste prorrateado y comparación de canales. |
+| `/recetas` | Recetas en gramos, con macros por ración calculados en Postgres. |
+| `/foods` | Catálogo de alimentos con macros por 100 g y alta manual desde una etiqueta. |
 | `/objetivos` | Histórico de objetivos (kcal, proteína, grasa, carbohidratos). |
-| `/peso` | Registro de peso corporal. |
+| `/peso` (**Progreso**) | Registro de peso corporal y su evolución. |
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/semana.png" alt="Planificador semanal con las comidas del día"><br><sub><b>Semana</b> · una receta por hueco, con sus macros</sub></td>
+    <td width="50%"><img src="docs/screenshots/compra.png" alt="Lista de la compra por zonas con envases y coste"><br><sub><b>Compra</b> · envases enteros, por zonas de la tienda</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/recetas.png" alt="Listado de recetas con proteína y calorías por ración"><br><sub><b>Recetas</b> · proteína por cada 100 kcal de un vistazo</sub></td>
+    <td width="50%"><img src="docs/screenshots/progreso.png" alt="Evolución del peso corporal"><br><sub><b>Progreso</b> · peso y tendencia</sub></td>
+  </tr>
+</table>
+
+Funciona también en el móvil:
+
+<p><img src="docs/screenshots/hoy-movil.png" alt="Pantalla Hoy en el móvil" width="260"></p>
 
 ---
 
