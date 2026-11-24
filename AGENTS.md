@@ -98,6 +98,16 @@ Docker y el stack local están vetados (regla 10). Un Postgres embebido en Node 
 
 Tarda en torno a dos minutos: lánzalo en segundo plano. Así se detectó que 4 migraciones rompían en una base nueva.
 
+## Capturas del README
+
+Están en `docs/screenshots/` y **solo pueden salir de datos de ejemplo**: nunca de una base con datos reales. Cómo se hicieron, sin Supabase ni Docker:
+
+1. Base de prueba: las migraciones reales sobre Postgres embebido (ver "Probar migraciones en una base vacía"), más los alimentos de BEDCA, `supabase/seed/*.sql` y datos inventados (un plan semanal, pesos, productos y precios con nombres genéricos).
+2. Un servidor HTTP local que imita lo que la app usa de Supabase: `/auth/v1/token` y `/auth/v1/user`, y un subconjunto de PostgREST (`select`, `order`, `limit`, `eq/neq/gt/gte/lt/lte/is/in/cs/not`, y `rpc`). Responde con las vistas y funciones reales.
+3. La app compilada (`pnpm build` con `NEXT_PUBLIC_SUPABASE_URL` apuntando a ese servidor, **no** `next dev`, que pinta un indicador en pantalla) y Playwright con Chromium: login, 1440×900 para escritorio y 390×844 a 2x para móvil.
+
+Si cambias la interfaz, regenera las capturas con ese mismo método. Mira siempre la imagen resultante: así se detectó un fallo real en el gráfico de peso.
+
 ## Higiene de git
 
 - **Usa el correo `noreply` de GitHub como autor** (`<id>+<usuario>@users.noreply.github.com`), no el real. Un incidente real: commits hechos por un agente con la config global de git subieron un correo personal al historial. Comprueba `git config user.email` antes de commitear, y activa en GitHub *Settings → Emails → "Block command line pushes that expose my email"*.
