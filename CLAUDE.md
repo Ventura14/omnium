@@ -67,40 +67,11 @@ Son restricciones duras del sistema, no preferencias sugeridas, pero **son datos
 - Qué ingestas hay en el día (hay quien no desayuna) y cuáles cambian entre casa y oficina.
 - Comidas y cenas fuera de casa por semana (configurable).
 
-## Estructura
+## Estructura y comandos
 
-```
-/app                 Next.js App Router
-/components          UI. shadcn/ui + composiciones propias. Sin lógica.
-/lib                 Cliente Supabase, tipos generados, helpers de formato
-/services            Python
-  /scrapers          Uno por tienda+canal (ver docs/PROVIDERS.md)
-  /matching          food ↔ product vía embeddings + pgvector
-  /optimizer         Asignación de cesta y canal
-  /nutrition         Cálculo de macros, importadores BEDCA/OFF
-/supabase
-  /migrations        SQL versionado
-  /seed              Datos sintéticos
-/docs
-  PLAN.md            Plan de implementación
-  PROVIDERS.md       Tiendas y canales: qué hay, qué está fijado a Dia, cómo añadir una
-```
+Viven en `AGENTS.md`, importado aquí debajo: estructura del repositorio, comandos, mapa de vistas y funciones SQL, y cómo verificar un cambio (incluido probar migraciones en una base vacía). Si un comando de ese archivo no funciona, es un bug del documento: arréglalo allí antes de seguir. Recuerda la regla dura 10: nunca `supabase start` ni `supabase db reset`.
 
-## Comandos
-
-```bash
-pnpm dev                            # frontend local
-pnpm typecheck                      # antes de cada commit
-supabase db push                    # aplica migraciones pendientes al proyecto enlazado (cloud)
-supabase gen types typescript --linked > lib/database.types.ts
-cd services && uv run pytest        # tests de Python
-uv run services/nutrition/insert_bedca.py   # catalogo de alimentos (BEDCA), una vez por base
-uv run services/nutrition/apply_seed.py     # datos de ejemplo de supabase/seed/ (necesita un usuario creado en Supabase)
-```
-
-Nunca `supabase start` ni `supabase db reset` — ver regla dura 10.
-
-`pnpm typecheck` estuvo documentado aquí desde el principio sin que el script existiera en `package.json` -- nunca funcionó desde que se escribió esta sección hasta que se añadió el 2026-08-21. Si un comando de esta sección no funciona, es un bug del documento, no del entorno. Arréglalo aquí antes de seguir.
+@AGENTS.md
 
 ## Convenciones
 
