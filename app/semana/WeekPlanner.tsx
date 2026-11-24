@@ -35,6 +35,7 @@ export type PlannerDay = {
     kcalGap: number;
     proteinGap: number;
     onTarget: boolean;
+    macrosIncomplete: boolean;
     mealsOut: number;
     emptySlots: number;
   } | null;

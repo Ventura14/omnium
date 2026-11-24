@@ -66,10 +66,11 @@ type DayTotalRow = {
   fat: number | null;
   target_kcal: number;
   target_protein: number;
-  kcal_gap: number;
-  protein_gap: number;
+  kcal_gap: number | null;
+  protein_gap: number | null;
   meals_out: number;
   slots_vacios: number;
+  slots_macro_incompletos: number | null;
 };
 
 export default async function SemanaPage({
@@ -162,7 +163,7 @@ export default async function SemanaPage({
         supabase
           .from("plan_day_totals")
           .select(
-            "slot_date, kcal, protein, carbs, fat, target_kcal, target_protein, kcal_gap, protein_gap, meals_out, slots_vacios"
+            "slot_date, kcal, protein, carbs, fat, target_kcal, target_protein, kcal_gap, protein_gap, meals_out, slots_vacios, slots_macro_incompletos"
           )
           .eq("plan_id", plan.id)
           .returns<DayTotalRow[]>(),
@@ -244,13 +245,17 @@ export default async function SemanaPage({
             targetProtein: t.target_protein,
             targetCarbs: target?.carbs_g ?? null,
             targetFat: target?.fat_g ?? null,
-            kcalGap: t.kcal_gap,
-            proteinGap: t.protein_gap,
+            kcalGap: t.kcal_gap ?? 0,
+            proteinGap: t.protein_gap ?? 0,
+            // Gap NULL = algun ingrediente sin macros: no se sabe, asi que
+            // no es "en objetivo" (regla 15: un dato que falta no es un 0).
             onTarget:
-              t.kcal_gap >= 0 &&
-              t.protein_gap >= 0 &&
+              (t.kcal_gap ?? -1) >= 0 &&
+              (t.protein_gap ?? -1) >= 0 &&
               t.meals_out === 0 &&
-              t.slots_vacios === 0,
+              t.slots_vacios === 0 &&
+              (t.slots_macro_incompletos ?? 0) === 0,
+            macrosIncomplete: (t.slots_macro_incompletos ?? 0) > 0,
             mealsOut: t.meals_out,
             emptySlots: t.slots_vacios,
           }

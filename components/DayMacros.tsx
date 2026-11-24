@@ -10,6 +10,8 @@ export type DayStatusTotals = {
   emptySlots: number;
   mealsOut: number;
   onTarget: boolean;
+  // Algun ingrediente sin macros: el total del dia es NULL, no 0 ni "corto".
+  macrosIncomplete: boolean;
   proteinGap: number;
   kcalGap: number;
 };
@@ -20,7 +22,10 @@ export type DayStatusTotals = {
 export function DayStatus({ totals }: { totals: DayStatusTotals }) {
   let label: string;
   let tone: "ok" | "warn" | "muted";
-  if (totals.emptySlots > 0) {
+  if (totals.macrosIncomplete) {
+    label = "Macros incompletos";
+    tone = "muted";
+  } else if (totals.emptySlots > 0) {
     label = `${totals.emptySlots} hueco${totals.emptySlots > 1 ? "s" : ""}`;
     tone = "muted";
   } else if (totals.mealsOut > 0) {

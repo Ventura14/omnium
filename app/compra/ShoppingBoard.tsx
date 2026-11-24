@@ -215,7 +215,7 @@ export function ShoppingBoard({
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="opacity-70">Por Glovo</dt>
+                <dt className="opacity-70">Dia + comisiones de Glovo</dt>
                 <dd className="font-semibold tabular-nums">
                   {money(totals.glovoCost)}
                 </dd>

@@ -43,6 +43,7 @@ type ShoppingRow = {
 };
 
 type ProposalRow = {
+  channel_id: string | null;
   food_id: string | null;
   food_name: string | null;
   product_name: string | null;
@@ -146,15 +147,13 @@ export default async function CompraPage({
       .eq("plan_id", plan.id)
       .maybeSingle(),
     supabase.from("channels").select("id, store, channel"),
-    // Acotado al canal presencial: desde 20260912000000 la vista da
-    // una fila por (food, canal), y shopping_list ya se acota igual
-    // -- sin este filtro un food con precio tambien en Glovo daria 2
-    // filas aqui y el Map de mas abajo se quedaria con la que llegue
-    // ultima, al azar.
+    // Desde 20260912000000 la vista da una fila por (food, canal). Se
+    // trae todo y se acota al canal presencial mas abajo, con el id que
+    // ya se carga de `channels` (el id es por base de datos: no se
+    // puede escribir a mano).
     supabase
       .from("cheapest_dia_proposal")
-      .select("food_id, food_name, product_name, sin_criterio_comparacion, motivos, image_path")
-      .eq("channel_id", "a1dbf77b-785a-407c-bbe8-e6fce579ee99")
+      .select("channel_id, food_id, food_name, product_name, sin_criterio_comparacion, motivos, image_path")
       .returns<ProposalRow[]>(),
     supabase
       .from("shopping_check")
@@ -181,10 +180,20 @@ export default async function CompraPage({
     (checks ?? []).map((c) => [c.food_id, c.packs_checked])
   );
 
+  const presencial = channels?.find(
+    (c) => c.store === "dia" && c.channel === "presencial"
+  );
+  const glovo = channels?.find(
+    (c) => c.store === "dia" && c.channel === "glovo"
+  );
+
   const pendingReasons = new Map<string, string>();
   const imagePathByFoodId = new Map<string, string>();
   for (const row of proposals ?? []) {
     if (!row.food_id) continue;
+    // Solo el canal presencial: un food con precio tambien en Glovo da
+    // dos filas y el Map se quedaria con la ultima, al azar.
+    if (!presencial || row.channel_id !== presencial.id) continue;
     if (row.sin_criterio_comparacion) {
       if (!row.food_name || pendingReasons.has(row.food_name)) continue;
       pendingReasons.set(row.food_name, row.motivos?.[0] ?? "sin motivo registrado");
@@ -243,12 +252,6 @@ export default async function CompraPage({
     0
   );
 
-  const presencial = channels?.find(
-    (c) => c.store === "dia" && c.channel === "presencial"
-  );
-  const glovo = channels?.find(
-    (c) => c.store === "dia" && c.channel === "glovo"
-  );
   const boxTotal = costSummary?.box_total ?? null;
 
   const [{ data: presencialCost }, { data: glovoCost }] = await Promise.all([

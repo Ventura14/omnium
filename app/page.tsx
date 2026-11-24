@@ -149,7 +149,8 @@ export default async function HoyPage() {
     (t.kcal_gap ?? -1) >= 0 &&
     (t.protein_gap ?? -1) >= 0 &&
     !(t.meals_out ?? 0) &&
-    !(t.slots_vacios ?? 0);
+    !(t.slots_vacios ?? 0) &&
+    !(t.slots_macro_incompletos ?? 0);
 
   const slotsByMeal = new Map((todaySlots ?? []).map((s) => [s.meal as Meal, s]));
   const meals = MEAL_ORDER.filter((m) => slotsByMeal.has(m)).map(
@@ -167,7 +168,10 @@ export default async function HoyPage() {
       targetKcal: t?.target_kcal ?? null,
       protein: t?.protein ?? null,
       isToday: date === today,
-      hasCaveat: (t?.meals_out ?? 0) > 0 || (t?.slots_vacios ?? 0) > 0,
+      hasCaveat:
+        (t?.meals_out ?? 0) > 0 ||
+        (t?.slots_vacios ?? 0) > 0 ||
+        (t?.slots_macro_incompletos ?? 0) > 0,
     };
   });
   const daysOnTarget = (dayTotals ?? []).filter(isOnTarget).length;
@@ -206,6 +210,7 @@ export default async function HoyPage() {
                   emptySlots: todayTotals.slots_vacios ?? 0,
                   mealsOut: todayTotals.meals_out ?? 0,
                   onTarget: isOnTarget(todayTotals),
+                  macrosIncomplete: (todayTotals.slots_macro_incompletos ?? 0) > 0,
                   proteinGap: todayTotals.protein_gap ?? 0,
                   kcalGap: todayTotals.kcal_gap ?? 0,
                 }}
@@ -355,7 +360,7 @@ export default async function HoyPage() {
                   {glovoCost != null ? (
                     <>
                       {" "}
-                      · Glovo <span className="text-blaze">{money(glovoCost)}</span>
+                      · con comisiones de Glovo <span className="text-blaze">{money(glovoCost)}</span>
                     </>
                   ) : null}
                 </p>
@@ -434,12 +439,17 @@ type TodayTotals = {
   kcal_gap: number | null;
   meals_out: number | null;
   slots_vacios: number | null;
+  slots_macro_incompletos: number | null;
 };
 
 // El titular cuenta lo que dice plan_day_totals sin maquillarlo: si
 // hay huecos o comidas fuera, el total del plan no es el de verdad y
 // se dice, en vez de dar un "te faltan X kcal" engañoso.
 function headline(t: TodayTotals): { top: string; accent: string } {
+  // Total NULL por falta de macros: no es "te faltan 0", es que no se sabe.
+  if ((t.slots_macro_incompletos ?? 0) > 0) {
+    return { top: "Macros incompletos.", accent: "Falta el dato de algún ingrediente." };
+  }
   if ((t.slots_vacios ?? 0) > 0) {
     const n = t.slots_vacios!;
     return { top: "Plan a medias.", accent: `${n} hueco${n > 1 ? "s" : ""} por asignar.` };
